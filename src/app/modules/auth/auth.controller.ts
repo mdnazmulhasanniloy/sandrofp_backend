@@ -7,7 +7,30 @@ import config from '../../config';
 
 // login
 const login = catchAsync(async (req: Request, res: Response) => {
-  const result = await authServices.login(req.body);
+  const result = await authServices.login(req.body, req);
+  const { refreshToken } = result;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const cookieOptions: any = {
+    secure: false,
+    httpOnly: true,
+    maxAge: 31536000000,
+  };
+
+  if (config.NODE_ENV === 'production') {
+    cookieOptions.sameSite = 'none';
+  }
+  res.cookie('refreshToken', refreshToken, cookieOptions);
+
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Logged in successfully',
+    data: result,
+  });
+});
+
+const googleLogin = catchAsync(async (req: Request, res: Response) => {
+  const result = await authServices.googleLogin(req.body, req);
   const { refreshToken } = result;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const cookieOptions: any = {
@@ -83,4 +106,5 @@ export const authControllers = {
   forgotPassword,
   resetPassword,
   refreshToken,
+  googleLogin,
 };

@@ -8,6 +8,12 @@ import { USER_ROLE } from '../user/user.constants';
 const router = Router();
 
 router.post(
+  '/google-login',
+  validateRequest(authValidation.googleLogin),
+  authControllers.googleLogin,
+);
+
+router.post(
   '/login',
   validateRequest(authValidation.loginZodValidationSchema),
   authControllers.login,
@@ -25,7 +31,7 @@ router.patch(
     USER_ROLE.super_admin,
     USER_ROLE.sub_admin,
     USER_ROLE.admin,
-    USER_ROLE.user, 
+    USER_ROLE.user,
   ),
   authControllers.changePassword,
 );

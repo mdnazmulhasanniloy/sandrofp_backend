@@ -4,8 +4,7 @@ import validateRequest from '../../middleware/validateRequest';
 import { userValidation } from './user.validation';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from './user.constants';
-import parseData from '../../middleware/parseData';
-import fileUpload from '../../middleware/fileUpload';
+import parseData from '../../middleware/parseData'; 
 import multer, { memoryStorage } from 'multer';
 
 const router = Router();

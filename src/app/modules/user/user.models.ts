@@ -2,7 +2,7 @@ import { Error, Query, Schema, model } from 'mongoose';
 import config from '../../config';
 import bcrypt from 'bcrypt';
 import { IUser, UserModel } from './user.interface';
-import { Role, USER_ROLE } from './user.constants';
+import { Login_With, Role, USER_ROLE } from './user.constants';
 
 const userSchema: Schema<IUser> = new Schema(
   {
@@ -27,7 +27,16 @@ const userSchema: Schema<IUser> = new Schema(
 
     phoneNumber: {
       type: String,
-      required: true,
+      required: false,
+      unique: true,
+      sparse: true,
+      trim: true,
+      validate: {
+        validator: function (v: string) {
+          return /^(\+?\d{8,15})$/.test(v);
+        },
+        message: (props: any) => `${props.value} is not a valid phone number!`,
+      },
       default: null,
     },
 
@@ -46,12 +55,16 @@ const userSchema: Schema<IUser> = new Schema(
       type: String,
       default: null,
     },
-    
-    isGoogleLogin: {
-      type: Boolean,
-      default: false,
-    },
+
     profile: {
+      type: String,
+      default: null,
+    },
+    hobby: {
+      type: String,
+      default: null,
+    },
+    language: {
       type: String,
       default: null,
     },
@@ -60,7 +73,24 @@ const userSchema: Schema<IUser> = new Schema(
       enum: Role,
       default: USER_ROLE.user,
     },
-
+    location: {
+      type: {
+        type: {
+          type: String,
+          enum: ['Point'],
+          required: true,
+        },
+        coordinates: {
+          type: [Number],
+          required: true,
+        },
+      },
+    },
+    loginWth: {
+      type: String,
+      enum: Login_With,
+      default: Login_With.credentials,
+    },
     address: {
       type: String,
       default: null,
@@ -88,21 +118,46 @@ const userSchema: Schema<IUser> = new Schema(
         default: false,
       },
     },
+    expireAt: {
+      type: Date,
+      default: () => {
+        const expireAt = new Date();
+        return expireAt.setMinutes(expireAt.getMinutes() + 20);
+      },
+    },
+    device: {
+      ip: {
+        type: String,
+      },
+      browser: {
+        type: String,
+      },
+      os: {
+        type: String,
+      },
+      device: {
+        type: String,
+      },
+      lastLogin: {
+        type: String,
+      },
+    },
   },
   {
     timestamps: true,
   },
 );
 
+userSchema.index({ expireAt: 1 }, { expireAfterSeconds: 0 });
 userSchema.pre('save', async function (next) {
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
   const user = this;
-  if (!user?.isGoogleLogin) {
+  if (this.password) {
     user.password = await bcrypt.hash(
       user.password,
       Number(config.bcrypt_salt_rounds),
     );
   }
+
   next();
 });
 
@@ -115,7 +170,6 @@ userSchema.post(
     next();
   },
 );
- 
 
 userSchema.statics.isUserExist = async function (email: string) {
   return await User.findOne({ email: email }).select('+password');

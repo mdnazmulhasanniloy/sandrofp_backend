@@ -1,8 +1,6 @@
 import { Model, Types } from 'mongoose';
 
 export interface IUser {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  // [x: string]: any;
   _id?: Types.ObjectId;
   status: string;
   username: string;
@@ -14,7 +12,14 @@ export interface IUser {
   dateOfBirth: string;
   profile: string;
   role: string;
-  isGoogleLogin: boolean;
+  hobby: string;
+  language: string;
+  loginWth: 'google' | 'apple' | 'facebook' | 'credentials';
+  expireAt: Date;
+  location: {
+    type: string;
+    coordinates: [number, number];
+  };
   address?: string;
   needsPasswordChange: boolean;
   passwordChangedAt?: Date;
@@ -23,6 +28,13 @@ export interface IUser {
     otp: string | number;
     expiresAt: Date;
     status: boolean;
+  };
+  device: {
+    ip: string;
+    browser: string;
+    os: string;
+    device: string;
+    lastLogin: string;
   };
 }
 

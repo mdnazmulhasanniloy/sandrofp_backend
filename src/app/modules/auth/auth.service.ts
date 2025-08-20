@@ -17,9 +17,14 @@ import { IUser } from '../user/user.interface';
 import { User } from '../user/user.models';
 import path from 'path';
 import fs from 'fs';
+import UAParser from 'ua-parser-js';
+import { DecodedIdToken } from 'firebase-admin/lib/auth/token-verifier';
+import firebaseAdmin from '../../utils/firebase';
+import { Login_With, USER_ROLE } from '../user/user.constants';
+import { Request } from 'express';
 
 // Login
-const login = async (payload: TLogin) => {
+const login = async (payload: TLogin, req: Request) => {
   const user: IUser | null = await User.isUserExist(payload?.email);
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
@@ -52,6 +57,30 @@ const login = async (payload: TLogin) => {
     config.jwt_refresh_secret as string,
     config.jwt_refresh_expires_in as string,
   );
+
+  const ip =
+    req.headers['x-forwarded-for']?.toString().split(',')[0] ||
+    req.socket.remoteAddress ||
+    '';
+
+  const userAgent = req.headers['user-agent'] || '';
+  //@ts-ignore
+  const parser = new UAParser(userAgent);
+  const result = parser.getResult();
+  const data = {
+    device: {
+      ip: ip,
+      browser: result.browser.name,
+      os: result.os.name,
+      device: result.device.model || 'Desktop',
+      lastLogin: new Date().toISOString(),
+    },
+  };
+
+  await User.findByIdAndUpdate(user?._id, data, {
+    new: true,
+    upsert: false,
+  });
 
   return {
     user,
@@ -127,20 +156,20 @@ const forgotPassword = async (email: string) => {
     },
   });
 
-    const otpEmailPath = path.join(
-      __dirname,
-      '../../../../public/view/forgot_pass_mail.html',
-    );
+  const otpEmailPath = path.join(
+    __dirname,
+    '../../../../public/view/forgot_pass_mail.html',
+  );
 
-    await sendEmail(
-      user?.email,
-      'Your reset password OTP is',
-      fs
-        .readFileSync(otpEmailPath, 'utf8')
-        .replace('{{otp}}', otp)
-        .replace('{{email}}', user?.email),
-    );
-    
+  await sendEmail(
+    user?.email,
+    'Your reset password OTP is',
+    fs
+      .readFileSync(otpEmailPath, 'utf8')
+      .replace('{{otp}}', otp)
+      .replace('{{email}}', user?.email),
+  );
+
   // await sendEmail(
   //   email,
   //   'Your reset password OTP is:',
@@ -236,10 +265,167 @@ const refreshToken = async (token: string) => {
   };
 };
 
+const googleLogin = async (payload: any, req: Request) => {
+  try {
+    const decodedToken: DecodedIdToken | null = await firebaseAdmin
+      .auth()
+      .verifyIdToken(payload?.token);
+    console.log(JSON.stringify(decodedToken));
+    if (!decodedToken)
+      throw new AppError(httpStatus.BAD_REQUEST, 'Invalid token');
+
+    if (!decodedToken?.email_verified) {
+      throw new AppError(
+        httpStatus?.BAD_REQUEST,
+        'your mail not verified from google',
+      );
+    }
+    const isExist: IUser | null = await User.isUserExist(
+      decodedToken.email as string,
+    );
+    if (isExist) {
+      if (isExist?.status !== 'active')
+        throw new AppError(httpStatus.FORBIDDEN, 'This account is Blocked');
+      if (
+        isExist?.loginWth ===
+        (Login_With.credentials || Login_With.facebook || Login_With.apple)
+      )
+        throw new AppError(
+          httpStatus.FORBIDDEN,
+          `This account in not registered with google login. try it ${isExist?.loginWth}`,
+        );
+
+      if (isExist?.isDeleted)
+        throw new AppError(httpStatus.FORBIDDEN, 'This user is deleted');
+
+      if (!isExist?.verification?.status) {
+        throw new AppError(
+          httpStatus.FORBIDDEN,
+          'User account is not verified',
+        );
+      }
+
+      const jwtPayload: { userId: string; role: string } = {
+        userId: isExist?._id?.toString() as string,
+        role: isExist?.role,
+      };
+
+      const accessToken = createToken(
+        jwtPayload,
+        config.jwt_access_secret as string,
+        config.jwt_access_expires_in as string,
+      );
+
+      const refreshToken = createToken(
+        jwtPayload,
+        config.jwt_refresh_secret as string,
+        config.jwt_refresh_expires_in as string,
+      );
+      if (isExist) {
+        const ip =
+          req.headers['x-forwarded-for']?.toString().split(',')[0] ||
+          req.socket.remoteAddress ||
+          '';
+
+        const userAgent = req.headers['user-agent'] || '';
+        //@ts-ignore
+        const parser = new UAParser(userAgent);
+        const result = parser.getResult();
+        const device = {
+          ip: ip,
+          browser: result.browser.name,
+          os: result.os.name,
+          device: result.device.model || 'Desktop',
+          lastLogin: new Date().toISOString(),
+        };
+
+        await User.findByIdAndUpdate(
+          isExist?._id,
+          { device },
+          { new: true, upsert: false },
+        );
+      }
+      return {
+        user: isExist,
+        accessToken,
+        refreshToken,
+      };
+    }
+    const user = await User.create({
+      name: decodedToken?.name,
+      email: decodedToken?.email,
+      profile: decodedToken?.picture,
+      expireAt: null,
+      phoneNumber: decodedToken?.phone_number,
+      role: payload?.role ?? USER_ROLE.user,
+      loginWth: Login_With.google,
+      'verification.status': true,
+    });
+
+    if (!user)
+      throw new AppError(
+        httpStatus?.BAD_REQUEST,
+        'user account creation failed',
+      );
+    const jwtPayload: { userId: string; role: string } = {
+      userId: user?._id?.toString() as string,
+      role: user?.role,
+    };
+
+    const accessToken = createToken(
+      jwtPayload,
+      config.jwt_access_secret as string,
+      config.jwt_access_expires_in as string,
+    );
+
+    const refreshToken = createToken(
+      jwtPayload,
+      config.jwt_refresh_secret as string,
+      config.jwt_refresh_expires_in as string,
+    );
+    if (isExist) {
+      const ip =
+        req.headers['x-forwarded-for']?.toString().split(',')[0] ||
+        req.socket.remoteAddress ||
+        '';
+
+      const userAgent = req.headers['user-agent'] || '';
+      //@ts-ignore
+      const parser = new UAParser(userAgent);
+      const result = parser.getResult();
+      const data = {
+        device: {
+          ip: ip,
+          browser: result.browser.name,
+          os: result.os.name,
+          device: result.device.model || 'Desktop',
+          lastLogin: new Date().toISOString(),
+        },
+      };
+
+      await User.findByIdAndUpdate(user?._id, data, {
+        new: true,
+        upsert: false,
+      });
+    }
+    return {
+      user: user,
+      accessToken,
+      refreshToken,
+    };
+  } catch (error: any) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      error?.message ?? 'Login failed Server Error',
+    );
+  }
+};
+
 export const authServices = {
   login,
   changePassword,
   forgotPassword,
   resetPassword,
   refreshToken,
+  googleLogin,
 };
