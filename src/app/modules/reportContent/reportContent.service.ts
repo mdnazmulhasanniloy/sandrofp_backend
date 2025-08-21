@@ -6,6 +6,10 @@ import { pubClient } from '../../redis';
 import QueryBuilder from '../../class/builder/QueryBuilder';
 import { UploadedFiles } from '../../interface/common.interface';
 import { uploadManyToS3 } from '../../utils/s3';
+import { User } from '../user/user.models';
+import { USER_ROLE } from '../user/user.constants';
+import { modeType } from '../notification/notification.interface';
+import { notificationServices } from '../notification/notification.service';
 
 const createReportContent = async (payload: IReportContent, files: any) => {
   if (files) {
@@ -48,6 +52,37 @@ const createReportContent = async (payload: IReportContent, files: any) => {
     }
   } catch (err) {
     console.error('Redis cache invalidation error (createReportContent):', err);
+  }
+
+  // 🔹 Prepare notifications
+  const [subAdmins, admin] = await Promise.all([
+    User.find({ role: USER_ROLE.sub_admin }).select('_id'),
+    User.findOne({ role: USER_ROLE.admin }).select('_id'),
+  ]);
+
+  // Sub-admin notifications → Redis queue
+  if (subAdmins.length > 0) {
+    subAdmins.map(async sa => {
+      const message = {
+        receiver: sa._id,
+        refference: result._id,
+        model_type: modeType.ReportContent,
+        message: `A new report has been submitted on your product.`,
+        description: `A User reported product for "${result.reportType}". Please review the details.`,
+      };
+      await pubClient.rPush('sub_admin_notification', JSON.stringify(message));
+    });
+  }
+
+  // Admin notification → direct DB
+  if (admin) {
+    await notificationServices.insertNotificationIntoDb({
+      receiver: admin._id,
+      refference: result._id,
+      model_type: modeType.ReportContent,
+      message: `New product report submitted.`,
+      description: `A User has submitted a report on product for "${result.reportType}". Please review and take necessary action.`,
+    });
   }
 
   return result;
@@ -125,7 +160,6 @@ const getReportContentById = async (id: string) => {
     return result;
   }
 };
-
 
 const deleteReportContent = async (id: string) => {
   const result = await ReportContent.findByIdAndUpdate(

@@ -26,7 +26,7 @@ const insertNotificationIntoDb = async (payload: any) => {
 // Get all notifications
 const getAllNotifications = async (query: Record<string, any>) => {
   const notificationModel = new QueryBuilder(Notification.find(), query)
-    .search([])
+    .search([''])
     .filter()
     .paginate()
     .sort()
