@@ -68,6 +68,24 @@ const userSchema: Schema<IUser> = new Schema(
       type: String,
       default: null,
     },
+
+    avgRating: {
+      type: Number,
+      default: 0,
+    },
+    sellerType: {
+      type: String,
+      default: null,
+    },
+    totalReview: {
+      type: Number,
+      default: 0,
+    },
+    about:{
+      type: String,
+      default: null,
+    },
+
     role: {
       type: String,
       enum: Role,
@@ -94,6 +112,10 @@ const userSchema: Schema<IUser> = new Schema(
     address: {
       type: String,
       default: null,
+    },
+    tokens: {
+      type: Number,
+      default: 0,
     },
     needsPasswordChange: {
       type: Boolean,
@@ -178,6 +200,8 @@ userSchema.statics.isUserExist = async function (email: string) {
 userSchema.statics.IsUserExistId = async function (id: string) {
   return await User.findById(id).select('+password');
 };
+
+
 userSchema.statics.isPasswordMatched = async function (
   plainTextPassword,
   hashedPassword,

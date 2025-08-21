@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import { productsService } from './products.service';
-import sendResponse from '../../utils/sendResponse';
-import { storeFile } from '../../utils/fileHelper';
-import { uploadToS3 } from '../../utils/s3';
+import sendResponse from '../../utils/sendResponse'; 
 
 const createProducts = catchAsync(async (req: Request, res: Response) => {
+  req.body.author = req.user.userId;
   const result = await productsService.createProducts(req.body, req.files);
   sendResponse(res, {
     statusCode: 201,
@@ -57,6 +56,38 @@ const updateProducts = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+/**
+ * here need to complete approved and reject product
+ * 
+ */
+
+const rejectProducts = catchAsync(async (req: Request, res: Response) => {
+  const result = await productsService.updateProducts(
+    req.params.id,
+    req.body,
+    req.files,
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Products updated successfully',
+    data: result,
+  });
+});
+
+const approvedProducts = catchAsync(async (req: Request, res: Response) => {
+  const result = await productsService.updateProducts(
+    req.params.id,
+    req.body,
+    req.files,
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Products updated successfully',
+    data: result,
+  });
+});
 
 const deleteProducts = catchAsync(async (req: Request, res: Response) => {
   const result = await productsService.deleteProducts(req.params.id);
@@ -75,4 +106,6 @@ export const productsController = {
   updateProducts,
   deleteProducts,
   getMyProducts,
+  approvedProducts,
+  rejectProducts,
 };

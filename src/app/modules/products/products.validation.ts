@@ -2,39 +2,48 @@ import { z } from 'zod';
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
-const createProductSchema = z.object({
-  images: z
-    .array(
-      z.object({
-        key: z.string().min(1, { message: 'Image key is required' }),
-        url: z
-          .string()
-          .url({ message: 'Invalid URL format' })
-          .min(1, { message: 'Image URL is required' }),
-      }),
-    )
-    .min(1, { message: 'At least one image is required' }),
-
-  name: z.string().min(1, { message: 'Product name is required' }),
-
-  details: z.string().min(1, { message: 'Product details are required' }),
-
-  category: z.string().min(1, { message: 'Category is required' }),
-
-  price: z.number().min(0, { message: 'Price must be a positive number' }),
-
-  quantity: z.string().min(1, { message: 'Quantity is required' }),
-
-  expiredAt: z.string().min(1, { message: 'Expiry date is required' }),
-
-  discount: z.number().optional(),
-
-  isDeleted: z.boolean().default(false),
+const schema = z.object({
+  name: z.string().nonempty({ message: 'Product name is required' }),
+  descriptions: z.string().nullable().optional(),
+  size: z.string().nullable().optional(),
+  brands: z.string().nullable().optional(),
+  materials: z.string().nullable().optional(),
+  colors: z.string().nullable().optional(),
+  tags: z.array(z.string().nonempty({ message: 'Tag is required' })),
+  isSoldOut: z.boolean().optional().default(false),
+  isFeatured: z.boolean().optional().default(false),
+  isVerified: z.boolean().optional().default(false),
+  category: z.string().nonempty({ message: 'Category is required' }),
+  price: z.number().min(0, { message: 'Price must be >= 0' }),
+  quantity: z.string().nonempty({ message: 'Quantity is required' }),
+  discount: z.number().optional().default(0),
+  isDeleted: z.boolean().optional().default(false),
 });
 
-const updateProductSchema = createProductSchema.deepPartial(); // Allow partial updates
+const createProductSchema = z.object({
+  body: schema,
+});
+
+const updateProductSchema = z.object({
+  body: schema.deepPartial(),
+});
+const approvedProductSchema = z.object({
+  body: z.object({
+    isVerified: z.boolean(),
+  }),
+});
+const rejectProductSchema = z.object({
+  params: z.object({
+    id: z.string().nonempty({ message: 'Product ID is required in query' }),
+  }),
+  body: z.object({
+    reason: z.string().nonempty({ message: 'Reason is required' }),
+  }),
+});
 
 export const productValidation = {
   createProductSchema,
   updateProductSchema,
+  rejectProductSchema,
+  approvedProductSchema,
 };

@@ -283,13 +283,12 @@ const googleLogin = async (payload: any, req: Request) => {
     const isExist: IUser | null = await User.isUserExist(
       decodedToken.email as string,
     );
+
     if (isExist) {
       if (isExist?.status !== 'active')
         throw new AppError(httpStatus.FORBIDDEN, 'This account is Blocked');
-      if (
-        isExist?.loginWth ===
-        (Login_With.credentials || Login_With.facebook || Login_With.apple)
-      )
+      // Login_With.credentials ||
+      if (isExist?.loginWth === (Login_With.facebook || Login_With.apple))
         throw new AppError(
           httpStatus.FORBIDDEN,
           `This account in not registered with google login. try it ${isExist?.loginWth}`,

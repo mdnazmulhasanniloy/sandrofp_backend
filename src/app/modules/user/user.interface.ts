@@ -13,9 +13,17 @@ export interface IUser {
   profile: string;
   role: string;
   hobby: string;
+  tokens: number;
+  isVerifiedUser: boolean;
   language: string;
   loginWth: 'google' | 'apple' | 'facebook' | 'credentials';
   expireAt: Date;
+
+  avgRating: number;
+  sellerType: string;
+  totalReview: number;
+  about: string;
+
   location: {
     type: string;
     coordinates: [number, number];

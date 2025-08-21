@@ -7,12 +7,13 @@ import { User } from './user.models';
 import QueryBuilder from '../../class/builder/QueryBuilder';
 import bcrypt from 'bcrypt';
 import config from '../../config';
+import { pubClient } from '../../redis';
 
 export type IFilter = {
-  searchTerm?: string;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  searchTerm?: string; 
   [key: string]: any;
 };
+
 const createUser = async (payload: IUser): Promise<IUser> => {
   const isExist = await User.isUserExist(payload.email as string);
 
@@ -36,15 +37,7 @@ const createUser = async (payload: IUser): Promise<IUser> => {
     );
   }
 
-  if (payload?.isGoogleLogin) {
-    payload.verification = {
-      otp: 0,
-      expiresAt: new Date(Date.now()),
-      status: true,
-    };
-  }
-
-  if (!payload.isGoogleLogin && !payload.password) {
+  if (!payload.password) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Password is required');
   }
 
@@ -52,29 +45,99 @@ const createUser = async (payload: IUser): Promise<IUser> => {
   if (!user) {
     throw new AppError(httpStatus.BAD_REQUEST, 'User creation failed');
   }
+
+  // 🔹 Redis cache invalidation
+  try {
+    // Clear all user list caches
+    const keys = await pubClient.keys('users:*');
+    if (keys.length > 0) {
+      await pubClient.del(keys);
+    }
+
+    // Optionally, clear single user cache if updating an existing unverified user
+    if (user?._id) {
+      await pubClient.del(`user:${user._id?.toString()}`);
+    }
+  } catch (err) {
+    console.error('Redis cache invalidation error (createUser):', err);
+  }
+
   return user;
 };
 
 const getAllUser = async (query: Record<string, any>) => {
-  const userModel = new QueryBuilder(User.find(), query)
-    .search(['name', 'email', 'phoneNumber', 'status'])
-    .filter()
-    .paginate()
-    .sort();
-  const data: any = await userModel.modelQuery;
-  const meta = await userModel.countTotal();
-  return {
-    data,
-    meta,
-  };
+  try {
+    const cacheKey = `users:${JSON.stringify(query)}`;
+
+    // 1. Check cache
+    const cachedData = await pubClient.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+
+    // 2. Build query
+    const userModel = new QueryBuilder(User.find(), query)
+      .search(['name', 'email', 'phoneNumber', 'status'])
+      .filter()
+      .paginate()
+      .sort();
+
+    const data: any = await userModel.modelQuery;
+    const meta = await userModel.countTotal();
+
+    const response = { data, meta };
+
+    // 3. Store in cache (30s TTL)
+    await pubClient.set(cacheKey, JSON.stringify(response), { EX: 30 });
+
+    return response;
+  } catch (err) {
+    console.error('Redis caching error:', err);
+
+    // fallback to DB if Redis fails
+    const userModel = new QueryBuilder(User.find(), query)
+      .search(['name', 'email', 'phoneNumber', 'status'])
+      .filter()
+      .paginate()
+      .sort();
+
+    const data: any = await userModel.modelQuery;
+    const meta = await userModel.countTotal();
+
+    return { data, meta };
+  }
 };
 
 const geUserById = async (id: string) => {
-  const result = await User.findById(id);
-  if (!result) {
-    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  try {
+    const cacheKey = `users:${id}`;
+
+    // 1. Check cache
+    const cachedData = await pubClient.get(cacheKey);
+    if (cachedData) {
+      return JSON.parse(cachedData);
+    }
+
+    // 2. Fetch from DB
+    const result = await User.findById(id);
+    if (!result) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+
+    // 3. Store in cache (e.g., 60s TTL)
+    await pubClient.set(cacheKey, JSON.stringify(result), { EX: 60 });
+
+    return result;
+  } catch (err) {
+    console.error('Redis caching error (geUserById):', err);
+
+    // fallback if Redis fails
+    const result = await User.findById(id);
+    if (!result) {
+      throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+    }
+    return result;
   }
-  return result;
 };
 
 const updateUser = async (id: string, payload: Partial<IUser>) => {
@@ -83,6 +146,18 @@ const updateUser = async (id: string, payload: Partial<IUser>) => {
     throw new AppError(httpStatus.BAD_REQUEST, 'User updating failed');
   }
 
+  try {
+    // single user cache delete
+    await pubClient.del(`users:${id}`);
+
+    // user list cache clear
+    const keys = await pubClient.keys('users:*');
+    if (keys.length > 0) {
+      await pubClient.del(keys);
+    }
+  } catch (err) {
+    console.error('Redis cache invalidation error (updateUser):', err);
+  }
   return user;
 };
 
@@ -95,6 +170,19 @@ const deleteUser = async (id: string) => {
 
   if (!user) {
     throw new AppError(httpStatus.BAD_REQUEST, 'user deleting failed');
+  }
+
+  try {
+    // single user cache delete
+    await pubClient.del(`users:${id}`);
+
+    // user list cache clear
+    const keys = await pubClient.keys('users:*');
+    if (keys.length > 0) {
+      await pubClient.del(keys);
+    }
+  } catch (err) {
+    console.error('Redis cache invalidation error (deleteUser):', err);
   }
 
   return user;
