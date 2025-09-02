@@ -38,25 +38,7 @@ const NotificationSchema = new Schema<TNotification>(
   { timestamps: true },
 );
 
-// filter out deleted documents
-NotificationSchema.pre('find', function (next) {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //@ts-ignore
-  this.find({ isDeleted: { $ne: true } });
-  next();
-});
-
-NotificationSchema.pre('findOne', function (next) {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //@ts-ignore
-  this.find({ isDeleted: { $ne: true } });
-  next();
-});
-
-NotificationSchema.pre('aggregate', function (next) {
-  this.pipeline().unshift({ $match: { isDeleted: { $ne: true } } });
-  next();
-});
+ 
 
 export const Notification = model<TNotification>(
   'Notification',

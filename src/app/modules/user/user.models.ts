@@ -81,7 +81,7 @@ const userSchema: Schema<IUser> = new Schema(
       type: Number,
       default: 0,
     },
-    about:{
+    about: {
       type: String,
       default: null,
     },
@@ -93,15 +93,13 @@ const userSchema: Schema<IUser> = new Schema(
     },
     location: {
       type: {
-        type: {
-          type: String,
-          enum: ['Point'],
-          required: true,
-        },
-        coordinates: {
-          type: [Number],
-          required: true,
-        },
+        type: String,
+        enum: ['Point'],
+        required: true,
+      },
+      coordinates: {
+        type: [Number],
+        required: true,
       },
     },
     loginWth: {
@@ -200,7 +198,6 @@ userSchema.statics.isUserExist = async function (email: string) {
 userSchema.statics.IsUserExistId = async function (id: string) {
   return await User.findById(id).select('+password');
 };
-
 
 userSchema.statics.isPasswordMatched = async function (
   plainTextPassword,

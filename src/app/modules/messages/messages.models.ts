@@ -7,6 +7,11 @@ const messageSchema = new Schema<IMessages>(
       type: String,
       default: null,
     },
+    exchanges: {
+      type: Types.ObjectId,
+      ref: 'Exchanges',
+      default: null,
+    },
     imageUrl: [
       {
         type: String,

@@ -7,8 +7,9 @@ interface IPayload {
   imageUrl: string[];
   text: string;
   receiver: string;
-  chat: string;
+  chat?: string;
   sender: string;
+  exchanges?: string;
 }
 const sendMessage = async (
   io: Server,
@@ -27,6 +28,7 @@ const sendMessage = async (
 
     const message = {
       chat: payload?.chat,
+      exchanges: payload?.exchanges,
       receiver: payload?.receiver,
       sender: user?.userId,
       text: payload?.text,
@@ -40,7 +42,7 @@ const sendMessage = async (
     const [senderSocketId, receiverSocketId] = (await Promise.all([
       pubClient.hGet('userId_to_socketId', message.sender?.toString()),
       pubClient.hGet('userId_to_socketId', message.receiver?.toString()),
-    ])) as string[]; 
+    ])) as string[];
     io.to(senderSocketId).emit('new_message', { message });
     io.to(receiverSocketId).emit('new_message', { message });
     getChatList(io, { _id: payload.sender }, callback);

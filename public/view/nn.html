@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Display Image</title>
+</head>
+<body>
+  <h1>Uploaded Image</h1>
+  
+  <!-- Image will be displayed here -->
+  <img id="image" alt="Uploaded Image" width="300" />
+
+  <script>
+    // Get the image ID (this should come from your application logic, e.g., from a database)
+    const imageId = 'your_image_id_here'; // Replace with the actual image ID from MongoDB
+
+    // Fetch the image data from the backend
+    fetch(`/img`)
+      .then(response => response.json())
+      .then(data => {
+        const imageElement = document.getElementById('image');
+        // Set the image source to the Base64 string received from the backend
+        imageElement.src = data.image;
+      })
+      .catch(error => console.error('Error fetching image:', error));
+  </script>
+</body>
+</html>

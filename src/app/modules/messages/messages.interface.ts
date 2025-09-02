@@ -5,6 +5,7 @@ export interface IMessages {
   id?: string;
   text?: string;
   imageUrl?: string[];
+  exchanges: ObjectId;
   seen: boolean;
   chat: ObjectId;
   sender: ObjectId;
