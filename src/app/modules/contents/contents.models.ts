@@ -3,6 +3,10 @@ import { IContents, IContentsModel } from './contents.interface';
 
 const contentsSchema = new Schema<IContents>(
   {
+    perTokenPrice: {
+      type: Number,
+      default: 0,
+    },
     aboutUs: {
       type: String,
     },

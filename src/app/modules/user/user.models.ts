@@ -85,6 +85,10 @@ const userSchema: Schema<IUser> = new Schema(
       type: String,
       default: null,
     },
+    customerId: {
+      type: String,
+      default: null,
+    },
 
     role: {
       type: String,

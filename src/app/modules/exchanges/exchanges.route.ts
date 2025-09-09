@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { exchangesController } from './exchanges.controller';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from '../user/user.constants';
+import validateRequest from '../../middleware/validateRequest';
+import { exchangeValidator } from './exchanges.validation';
 
 const router = Router();
 
@@ -39,6 +41,7 @@ router.patch(
 router.patch(
   '/rejected/:id',
   auth(USER_ROLE.admin, USER_ROLE?.sub_admin, USER_ROLE.super_admin),
+  validateRequest(exchangeValidator.rejectExchangeSchema),
   exchangesController.rejectedExchange,
 );
 

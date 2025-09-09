@@ -3,7 +3,6 @@ import { Model, Types } from 'mongoose';
 export interface IUser {
   _id?: Types.ObjectId;
   status: string;
-  username: string;
   name: string;
   email: string;
   phoneNumber: string;
@@ -20,6 +19,7 @@ export interface IUser {
   expireAt: Date;
 
   avgRating: number;
+  customerId: string;
   sellerType: string;
   totalReview: number;
   about: string;
@@ -28,6 +28,7 @@ export interface IUser {
     type: string;
     coordinates: [number, number];
   };
+
   address?: string;
   needsPasswordChange: boolean;
   passwordChangedAt?: Date;

@@ -3,6 +3,7 @@ export enum modeType {
   Exchanges = 'Exchanges',
   ReportContent = 'ReportContent',
   Order = 'Order',
+  Payments = 'Payments',
 }
 export interface TNotification {
   receiver: ObjectId;
