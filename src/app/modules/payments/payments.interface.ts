@@ -10,6 +10,11 @@ export interface IPayments {
   totalToken: number;
   price: number;
   status: 'pending' | 'paid' | 'refunded' | 'canceled';
+  paymentDate: string;
+  cardLast4: string;
+  paymentMethod: string;
+  receipt_url: string;
+
   isDeleted: boolean;
 }
 

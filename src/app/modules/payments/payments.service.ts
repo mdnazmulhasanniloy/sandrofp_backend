@@ -15,7 +15,7 @@ import { Response } from 'express';
 import moment from 'moment';
 import { PAYMENT_STATUS } from './payments.constants';
 import { USER_ROLE } from '../user/user.constants';
-import { notificationServices } from '../notification/notification.service'; 
+import { notificationServices } from '../notification/notification.service';
 import { modeType } from '../notification/notification.interface';
 
 const checkout = async (payload: any) => {
@@ -116,6 +116,10 @@ const confirmPayment = async (query: Record<string, any>, res: Response) => {
         status: PAYMENT_STATUS?.paid,
         paymentIntentId: paymentIntentId,
         tnxId: charge?.balance_transaction,
+        paymentDate: chargeDetails?.paymentDate,
+        cardLast4: chargeDetails?.cardLast4,
+        paymentMethod: chargeDetails?.paymentMethod,
+        receipt_url: chargeDetails?.receipt_url,
       },
       { new: true, session },
     ).populate([

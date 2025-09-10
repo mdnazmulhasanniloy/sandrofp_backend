@@ -33,6 +33,22 @@ const paymentsSchema = new Schema<IPayments>(
       enum: ['pending', 'paid', 'refunded', 'canceled'],
       default: 'pending',
     },
+    paymentDate: {
+      type: String,
+      default: null,
+    },
+    cardLast4: {
+      type: String,
+      default: null,
+    },
+    paymentMethod: {
+      type: String,
+      default: null,
+    },
+    receipt_url: {
+      type: String,
+      default: null,
+    },
     isDeleted: { type: 'boolean', default: false },
   },
   {
