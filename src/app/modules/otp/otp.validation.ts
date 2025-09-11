@@ -18,7 +18,14 @@ const resentOtpZodSchema = z.object({
   }),
 });
 
+const verifyLinkSchema = z.object({
+  query: z.object({
+    token: z.string({ required_error: 'Invalid token!' }),
+  }),
+});
+
 export const resentOtpValidations = {
   resentOtpZodSchema,
   verifyOtpZodSchema,
+  verifyLinkSchema,
 };

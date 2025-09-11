@@ -4,6 +4,7 @@ import { authServices } from './auth.service';
 import sendResponse from '../../utils/sendResponse';
 import httpStatus from 'http-status';
 import config from '../../config';
+import { User } from '../user/user.models';
 
 // login
 const login = catchAsync(async (req: Request, res: Response) => {
@@ -100,6 +101,14 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
+const ChangePasswordLink = catchAsync(async (req: Request, res: Response) => {
+  const token = req.query.token;
+  const result = await authServices.changePasswordLink(token as string);
+
+  res.render('changePassword', { resetUrl: config.server_url, token });
+});
+
+
 export const authControllers = {
   login,
   changePassword,
@@ -107,4 +116,5 @@ export const authControllers = {
   resetPassword,
   refreshToken,
   googleLogin,
+  ChangePasswordLink,
 };

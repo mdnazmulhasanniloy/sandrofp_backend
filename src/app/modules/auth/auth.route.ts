@@ -38,4 +38,13 @@ router.patch(
 
 router.patch('/forgot-password', authControllers.forgotPassword);
 router.patch('/reset-password', authControllers.resetPassword);
+router.get('/reset-password', authControllers.ChangePasswordLink);
+router.get('/password-reset-success', (req, res) => {
+  res.render('successMessage', {
+    hadeTitle: 'Password Reset Successful',
+    title: 'Password Reset Successful 🎉',
+    description:
+      'Your password has been updated securely. You can now log in with your new credentials.',
+  });
+});
 export const authRoutes = router;

@@ -1,3 +1,4 @@
+import { createToken } from './../auth/auth.utils';
 import httpStatus from 'http-status';
 import AppError from '../../error/AppError';
 import jwt, { JwtPayload, Secret } from 'jsonwebtoken';
@@ -53,6 +54,7 @@ const verifyOtp = async (token: string, otp: string | number) => {
           expiresAt: moment().add(3, 'minute'),
           status: true,
         },
+        expireAt: null,
       },
     },
     { new: true },
@@ -109,37 +111,83 @@ const resendOtp = async (email: string) => {
     expiresIn: '3m',
   });
 
-    const otpEmailPath = path.join(
-      __dirname,
-      '../../../../public/view/otp_mail.html',
-    );
+  const otpEmailPath = path.join(
+    __dirname,
+    '../../../../public/view/otp_mail.html',
+  );
 
-    await sendEmail(
-      user?.email,
-      'Your One Time OTP',
-      fs
-        .readFileSync(otpEmailPath, 'utf8')
-        .replace('{{otp}}', otp)
-        .replace('{{email}}', user?.email),
-    );
-
-
-  // await sendEmail(
-  //   user?.email,
-  //   'Your One Time OTP',
-  //   `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-  //     <h2 style="color: #4CAF50;">Your One Time OTP</h2>
-  //     <div style="background-color: #f2f2f2; padding: 20px; border-radius: 5px;">
-  //       <p style="font-size: 16px;">Your OTP is: <strong>${otp}</strong></p>
-  //       <p style="font-size: 14px; color: #666;">This OTP is valid until: ${expiresAt.toLocaleString()}</p>
-  //     </div>
-  //   </div>`,
-  // );
-
+  await sendEmail(
+    user?.email,
+    'Your One Time OTP',
+    fs
+      .readFileSync(otpEmailPath, 'utf8')
+      .replace('{{otpCode}}', otp)
+      .replace('{{fullName}}', user?.name)
+      .replace(
+        '{{verifyUrl}}',
+        `${config.server_url}/otp/link-verification?token=${token}`,
+      ),
+  );
   return { token };
 };
+
+const verifyLink = async (query: Record<string, any>) => {
+  const token = query.token;
+  if (!token) {
+    throw new AppError(httpStatus.UNAUTHORIZED, 'You are not authorized');
+  }
+
+  let decode;
+  
+  try {
+    decode = jwt.verify(
+      token,
+      config.jwt_access_secret as Secret,
+    ) as JwtPayload;
+  } catch (err) {
+    console.error(err);
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'Session has expired. Please try to submit OTP within 3 minute',
+    );
+  }
+
+  const user: IUser | null = await User.findById(decode?.userId).select(
+    'verification status ',
+  );
+
+  if (!user) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'User not found');
+  }
+
+  if (new Date() > user?.verification?.expiresAt) {
+    throw new AppError(
+      httpStatus.FORBIDDEN,
+      'token has expired. Please resend it',
+    );
+  }
+
+  const updateUser = await User.findByIdAndUpdate(
+    user?._id,
+    {
+      $set: {
+        verification: {
+          otp: 0,
+          expiresAt: moment().add(3, 'minute'),
+          status: true,
+        },
+        expireAt: null,
+      },
+    },
+    { new: true },
+  ).select('email _id username role name');
+
+  return updateUser;
+};
+
 
 export const otpServices = {
   verifyOtp,
   resendOtp,
+  verifyLink,
 };

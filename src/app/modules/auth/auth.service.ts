@@ -21,7 +21,7 @@ import UAParser from 'ua-parser-js';
 import { DecodedIdToken } from 'firebase-admin/lib/auth/token-verifier';
 import firebaseAdmin from '../../utils/firebase';
 import { Login_With, USER_ROLE } from '../user/user.constants';
-import { Request } from 'express';
+import { Request, Response } from 'express';
 
 // Login
 const login = async (payload: TLogin, req: Request) => {
@@ -150,6 +150,7 @@ const forgotPassword = async (email: string) => {
   const expiresAt = moment(currentTime).add(3, 'minute');
 
   await User.findByIdAndUpdate(user?._id, {
+    needsPasswordChange: true,
     verification: {
       otp,
       expiresAt,
@@ -166,18 +167,13 @@ const forgotPassword = async (email: string) => {
     'Your reset password OTP is',
     fs
       .readFileSync(otpEmailPath, 'utf8')
-      .replace('{{otp}}', otp)
-      .replace('{{email}}', user?.email),
+      .replace('{{otpCode}}', otp)
+      .replace('{{fullName}}', user?.name)
+      .replace(
+        '{{resetUrl}}',
+        `${config.server_url}/auth/reset-password?token=${token}`,
+      ),
   );
-
-  // await sendEmail(
-  //   email,
-  //   'Your reset password OTP is:',
-  //   `<div><h5>Your OTP is: ${otp}</h5>
-  //   <p>Valid until: ${expiresAt.toLocaleString()}</p>
-  //   </div>`,
-  // );
-
   return { email, token };
 };
 
@@ -223,6 +219,7 @@ const resetPassword = async (token: string, payload: TResetPassword) => {
 
   const result = await User.findByIdAndUpdate(decode?.userId, {
     password: hashedPassword,
+    needsPasswordChange: false,
     passwordChangedAt: new Date(),
     verification: {
       otp: 0,
@@ -420,6 +417,36 @@ const googleLogin = async (payload: any, req: Request) => {
   }
 };
 
+const changePasswordLink = async (token: string) => {
+  let decode;
+  try {
+    decode = jwt.verify(
+      token,
+      config.jwt_access_secret as string,
+    ) as JwtPayload;
+  } catch (err) {
+    throw new AppError(
+      httpStatus.UNAUTHORIZED,
+      'Session has expired. Please try again',
+    );
+  }
+
+  const user: IUser | null = await User.findById(decode?.userId);
+
+  if (!user) {
+    throw new AppError(httpStatus.NOT_FOUND, 'User not found');
+  }
+
+  if (!user.needsPasswordChange) {
+    throw new AppError(
+      httpStatus.BAD_REQUEST,
+      'You are already reset your password',
+    );
+  }
+
+  return;
+};
+
 export const authServices = {
   login,
   changePassword,
@@ -427,4 +454,5 @@ export const authServices = {
   resetPassword,
   refreshToken,
   googleLogin,
+  changePasswordLink,
 };

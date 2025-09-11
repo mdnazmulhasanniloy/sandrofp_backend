@@ -7,9 +7,12 @@ import cors from 'cors';
 import express, { Application, Request, Response } from 'express';
 import globalErrorHandler from './app/middleware/globalErrorhandler';
 import notFound from './app/middleware/notfound';
-import router from './app/routes'; 
+import router from './app/routes';
 const app: Application = express();
 app.use(express.static('public'));
+app.set('view engine', 'ejs');
+app.set('views', 'public/ejs');
+
 app.use(express.json({ limit: '500mb' }));
 app.use(express.urlencoded({ limit: '500mb', extended: true }));
 
@@ -23,11 +26,25 @@ app.use(
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   }),
 );
- 
+
 app.use('/api/v1', router);
+
+app.get('/test', async (req, res) => {
+  res.render('changePassword', { resetUrl: '#' });
+});
+app.get('/test2', async (req, res) => {
+  res.render('successMessage', {
+    hadeTitle: 'OTP Verified',
+    title: 'Account Verified!',
+    description:
+      ' Congratulations! Your account has been successfully verified. You can  now log in and start using our services.',
+  });
+});
+
 app.get('/', (req: Request, res: Response) => {
   res.send('server is running');
 });
+
 app.use(globalErrorHandler);
 
 //Not Found

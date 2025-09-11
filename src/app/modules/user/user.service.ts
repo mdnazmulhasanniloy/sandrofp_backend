@@ -1,3 +1,4 @@
+import fs from 'fs';
 /* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status';
@@ -8,9 +9,14 @@ import QueryBuilder from '../../class/builder/QueryBuilder';
 import bcrypt from 'bcrypt';
 import config from '../../config';
 import { pubClient } from '../../redis';
+import { uploadToS3 } from '../../utils/s3';
+import generateCryptoString from '../../utils/generateCryptoString';
+import { USER_ROLE } from './user.constants';
+import path from 'path';
+import { sendEmail } from '../../utils/mailSender';
 
 export type IFilter = {
-  searchTerm?: string; 
+  searchTerm?: string;
   [key: string]: any;
 };
 
@@ -161,6 +167,39 @@ const updateUser = async (id: string, payload: Partial<IUser>) => {
   return user;
 };
 
+const createSubAdmin = async (payload: IUser, file: any) => {
+  const tempPassword = generateCryptoString(6);
+  if (file) {
+    payload.profile = (await uploadToS3({
+      file: file,
+      fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
+    })) as string;
+  }
+  const user = await User.create({
+    ...payload,
+    password: tempPassword,
+    role: USER_ROLE.sub_admin,
+    expireAt: null,
+    'verification.status': true,
+  });
+
+  const otpEmailPath = path.join(
+    __dirname,
+    '../../../../public/view/sub_admin_mail.html',
+  );
+
+  await sendEmail(
+    user?.email,
+    'New Sub‑Admin Created',
+    fs
+      .readFileSync(otpEmailPath, 'utf8')
+      .replace('{{fullName}}', user?.name)
+      .replace('{{email}}', user?.email)
+      .replace('{{tempPassword}}', tempPassword)
+      .replace('{{loginUrl}}', '#')
+      .replace('{{helpUrl}}', '#') 
+  );
+};
 const deleteUser = async (id: string) => {
   const user = await User.findByIdAndUpdate(
     id,
