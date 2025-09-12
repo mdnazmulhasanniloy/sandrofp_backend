@@ -27,19 +27,7 @@ app.use(
   }),
 );
 
-app.use('/api/v1', router);
-
-app.get('/test', async (req, res) => {
-  res.render('changePassword', { resetUrl: '#' });
-});
-app.get('/test2', async (req, res) => {
-  res.render('successMessage', {
-    hadeTitle: 'OTP Verified',
-    title: 'Account Verified!',
-    description:
-      ' Congratulations! Your account has been successfully verified. You can  now log in and start using our services.',
-  });
-});
+app.use('/api/v1', router); 
 
 app.get('/', (req: Request, res: Response) => {
   res.send('server is running');

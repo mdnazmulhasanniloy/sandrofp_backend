@@ -101,13 +101,15 @@ const refreshToken = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const ChangePasswordLink = catchAsync(async (req: Request, res: Response) => {
+const resetPasswordLink = catchAsync(async (req: Request, res: Response) => {
   const token = req.query.token;
-  const result = await authServices.changePasswordLink(token as string);
+  const result = await authServices.resetPasswordLink(token as string);
 
-  res.render('changePassword', { resetUrl: config.server_url, token });
+  res.render('resetPasswordPage', {
+    // resetUrl: `${config.server_url}/auth/reset-password`,
+    token,
+  });
 });
-
 
 export const authControllers = {
   login,
@@ -116,5 +118,5 @@ export const authControllers = {
   resetPassword,
   refreshToken,
   googleLogin,
-  ChangePasswordLink,
+  resetPasswordLink,
 };

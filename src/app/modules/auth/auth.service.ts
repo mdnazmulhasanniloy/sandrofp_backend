@@ -154,6 +154,7 @@ const forgotPassword = async (email: string) => {
     verification: {
       otp,
       expiresAt,
+      status: true,
     },
   });
 
@@ -171,7 +172,7 @@ const forgotPassword = async (email: string) => {
       .replace('{{fullName}}', user?.name)
       .replace(
         '{{resetUrl}}',
-        `${config.server_url}/auth/reset-password?token=${token}`,
+        `${config.server_url}/auth/reset-password-page?token=${token}`.trim(),
       ),
   );
   return { email, token };
@@ -195,6 +196,7 @@ const resetPassword = async (token: string, payload: TResetPassword) => {
   const user: IUser | null = await User.findById(decode?.userId).select(
     'isDeleted verification',
   );
+  console.log('🚀 ~ resetPassword ~ user:', user);
 
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found');
@@ -417,7 +419,7 @@ const googleLogin = async (payload: any, req: Request) => {
   }
 };
 
-const changePasswordLink = async (token: string) => {
+const resetPasswordLink = async (token: string) => {
   let decode;
   try {
     decode = jwt.verify(
@@ -454,5 +456,5 @@ export const authServices = {
   resetPassword,
   refreshToken,
   googleLogin,
-  changePasswordLink,
+  resetPasswordLink,
 };

@@ -125,7 +125,7 @@ const resendOtp = async (email: string) => {
       .replace('{{fullName}}', user?.name)
       .replace(
         '{{verifyUrl}}',
-        `${config.server_url}/otp/link-verification?token=${token}`,
+        `${config.server_url}/otp/verify-link?token=${token}`.trim(),
       ),
   );
   return { token };
@@ -138,7 +138,7 @@ const verifyLink = async (query: Record<string, any>) => {
   }
 
   let decode;
-  
+
   try {
     decode = jwt.verify(
       token,
@@ -159,7 +159,9 @@ const verifyLink = async (query: Record<string, any>) => {
   if (!user) {
     throw new AppError(httpStatus.BAD_REQUEST, 'User not found');
   }
-
+  if (user.verification.status) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'this link well be expired.');
+  }
   if (new Date() > user?.verification?.expiresAt) {
     throw new AppError(
       httpStatus.FORBIDDEN,
@@ -184,7 +186,6 @@ const verifyLink = async (query: Record<string, any>) => {
 
   return updateUser;
 };
-
 
 export const otpServices = {
   verifyOtp,

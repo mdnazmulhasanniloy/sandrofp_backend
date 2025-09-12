@@ -18,7 +18,8 @@ const verifyOtp = catchAsync(async (req: Request, res: Response) => {
 const verifyLink = catchAsync(async (req: Request, res: Response) => {
   const result = await otpServices.verifyLink(req?.query);
 
-  res.render('successMessage', {
+  return res.render('successMessage', {
+    hadeTitle: 'OTP Verification',
     title: 'Account Verified!',
     description:
       ' Congratulations! Your account has been successfully verified. You can  now log in and start using our services.',

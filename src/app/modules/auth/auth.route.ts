@@ -38,7 +38,10 @@ router.patch(
 
 router.patch('/forgot-password', authControllers.forgotPassword);
 router.patch('/reset-password', authControllers.resetPassword);
-router.get('/reset-password', authControllers.ChangePasswordLink);
+
+router.get('/reset-password-page', authControllers.resetPasswordLink);
+
+
 router.get('/password-reset-success', (req, res) => {
   res.render('successMessage', {
     hadeTitle: 'Password Reset Successful',
