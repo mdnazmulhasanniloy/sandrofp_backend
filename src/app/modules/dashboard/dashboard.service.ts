@@ -17,18 +17,18 @@ import { Types } from 'mongoose';
 import { paginationHelper } from '../../helpers/pagination.helpers';
 
 const getTopCardData = async () => {
-  const totalActiveUsers = User.countDocuments({
+  const totalActiveUsers = await User.countDocuments({
     status: 'active',
     role: { $ne: USER_ROLE.admin },
     'verification.status': true,
   });
 
-  const listedItems = Products.countDocuments({
+  const listedItems = await Products.countDocuments({
     isSoldOut: false,
     isDeleted: false,
   });
 
-  const successfulTrades = Exchanges.countDocuments({
+  const successfulTrades = await Exchanges.countDocuments({
     status: EXCHANGE_STATUS.Complete,
   });
 
@@ -252,6 +252,43 @@ const getAllTransitions = async (query: Record<string, any>) => {
     data,
   };
 
+  // const earnings = await Payments.aggregate([
+  //   {
+  //     $match: {
+  //       status: PAYMENT_STATUS.paid,
+  //     },
+  //   },
+  //   {
+  //     $facet: {
+  //       totalEarnings: [
+  //         {
+  //           $group: {
+  //             _id: null,
+  //             total: { $sum: '$amount' },
+  //           },
+  //         },
+  //       ],
+  //       todayEarnings: [
+  //         {
+  //           $match: {
+  //             isDeleted: false,
+  //             createdAt: {
+  //               $gte: today.toDate(),
+  //               $lte: today.endOf('day').toDate(),
+  //             },
+  //           },
+  //         },
+  //         {
+  //           $group: {
+  //             _id: null,
+  //             total: { $sum: '$amount' }, // Sum of today's earnings
+  //           },
+  //         },
+  //       ],
+  //     },
+  //   },
+  // ]);
+
   const earnings = await Payments.aggregate([
     {
       $match: {
@@ -265,6 +302,11 @@ const getAllTransitions = async (query: Record<string, any>) => {
             $group: {
               _id: null,
               total: { $sum: '$amount' },
+            },
+          },
+          {
+            $project: {
+              total: { $ifNull: ['$total', 0] }, // If no data, default to 0
             },
           },
         ],
@@ -281,13 +323,28 @@ const getAllTransitions = async (query: Record<string, any>) => {
           {
             $group: {
               _id: null,
-              total: { $sum: '$amount' }, // Sum of today's earnings
+              total: { $sum: '$amount' },
+            },
+          },
+          {
+            $project: {
+              total: { $ifNull: ['$total', 0] }, // If no data, default to 0
             },
           },
         ],
       },
     },
-  ]);
+    {
+      $project: {
+        totalEarnings: {
+          $ifNull: [{ $arrayElemAt: ['$totalEarnings.total', 0] }, 0],
+        }, // Ensure default 0 if empty
+        todayEarnings: {
+          $ifNull: [{ $arrayElemAt: ['$todayEarnings.total', 0] }, 0],
+        }, // Ensure default 0 if empty
+      },
+    },
+  ]).then(data => data[0]);
 
   return {
     transactions,

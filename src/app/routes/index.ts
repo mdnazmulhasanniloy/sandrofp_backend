@@ -5,6 +5,7 @@ import { authRoutes } from '../modules/auth/auth.route';
 import { notificationRoutes } from '../modules/notification/notificaiton.route';
 import { contentsRoutes } from '../modules/contents/contents.route';
 import { dashboardRoutes } from '../modules/dashboard/dashboard.route';
+import { categoryRoutes } from '../modules/category/category.route';
 
 const router = Router();
 const moduleRoutes = [
@@ -31,6 +32,10 @@ const moduleRoutes = [
   {
     path: '/dashboard',
     route: dashboardRoutes,
+  },
+  {
+    path: '/categories',
+    route: categoryRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

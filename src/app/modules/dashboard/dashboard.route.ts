@@ -20,5 +20,5 @@ router.get(
   auth(USER_ROLE.admin, USER_ROLE.sub_admin, USER_ROLE.super_admin),
   dashboardController.getAllTransitions,
 );
-
+ 
 export const dashboardRoutes = router;
