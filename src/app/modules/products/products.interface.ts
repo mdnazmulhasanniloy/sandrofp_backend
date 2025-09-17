@@ -27,6 +27,7 @@ export interface IProducts {
   isSoldOut: boolean;
   isFeatured: boolean;
   quantity: string;
+  reason?: string;
   isDeleted: boolean;
   isVerified: boolean;
 }

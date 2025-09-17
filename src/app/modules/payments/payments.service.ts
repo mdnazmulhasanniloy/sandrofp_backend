@@ -131,20 +131,26 @@ const confirmPayment = async (query: Record<string, any>, res: Response) => {
     }
 
     const admin = await User.findOne({ role: USER_ROLE.admin });
-    await notificationServices.insertNotificationIntoDb({
-      receiver: admin?._id,
-      message: 'New Banana Token Purchase',
-      description: `A user has successfully purchased ${payment?.totalToken} Banana Token. Payment transition id: ${payment?.tnxId}`,
-      refference: payment?._id,
-      model_type: modeType.Payments,
-    });
-    await notificationServices.insertNotificationIntoDb({
-      receiver: payment?.user,
-      message: 'Banana Token Purchase Successful',
-      description: `You have successfully purchased ${payment?.totalToken} Banana Token. Transaction ID: ${payment?.tnxId}`,
-      refference: payment?._id,
-      model_type: modeType.Payments,
-    });
+    if (admin) {
+      await notificationServices.insertNotificationIntoDb({
+        receiver: admin?._id,
+        message: 'New Banana Token Purchase',
+        description: `A user has successfully purchased ${payment?.totalToken} Banana Token. Payment transition id: ${payment?.tnxId}`,
+        refference: payment?._id,
+        model_type: modeType.Payments,
+      });
+    }
+
+    if (payment?.user) {
+      await notificationServices.insertNotificationIntoDb({
+        receiver: payment?.user,
+        message: 'Banana Token Purchase Successful',
+        description: `You have successfully purchased ${payment?.totalToken} Banana Token. Transaction ID: ${payment?.tnxId}`,
+        refference: payment?._id,
+        model_type: modeType.Payments,
+      });
+    }
+
     await session.commitTransaction();
     return { ...payment.toObject(), chargeDetails };
   } catch (error: any) {
@@ -159,177 +165,20 @@ const confirmPayment = async (query: Record<string, any>, res: Response) => {
           message:
             error.message ||
             `Error processing refund: ${refundError?.messages}`,
+          device: device || '',
         });
       }
     }
     throw res.render('paymentError', {
       message: error.message || 'Server internal error',
+      device: device || '',
     });
   } finally {
     session.endSession();
   }
 };
 
-const createPayments = async (payload: IPayments) => {
-  const result = await Payments.create(payload);
-  if (!result) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create payments');
-  }
-
-  // 🔹 Redis cache invalidation
-  try {
-    // Clear all payments list caches
-    const keys = await pubClient.keys('payments:*');
-    if (keys.length > 0) {
-      await pubClient.del(keys);
-    }
-
-    // Optionally, clear single payments cache if updating an existing unverified payments
-    if (result?._id) {
-      await pubClient.del('payments:' + result?._id?.toString());
-    }
-  } catch (err) {
-    console.error('Redis cache invalidation error (createPayments):', err);
-  }
-
-  return result;
-};
-
-const getAllPayments = async (query: Record<string, any>) => {
-  try {
-    const cacheKey = 'payments:' + JSON.stringify(query);
-    // 1. Check cache
-    const cachedData = await pubClient.get(cacheKey);
-    if (cachedData) {
-      return JSON.parse(cachedData);
-    }
-    const paymentsModel = new QueryBuilder(
-      Payments.find({ isDeleted: false }),
-      query,
-    )
-      .search([''])
-      .filter()
-      .paginate()
-      .sort()
-      .fields();
-
-    const data = await paymentsModel.modelQuery;
-    const meta = await paymentsModel.countTotal();
-
-    const response = { data, meta };
-
-    // 3. Store in cache (30s TTL)
-    await pubClient.set(cacheKey, JSON.stringify(response), { EX: 30 });
-
-    return response;
-  } catch (err) {
-    console.error('Redis caching error (getAllPayments):', err);
-    const paymentsModel = new QueryBuilder(
-      Payments.find({ isDeleted: false }),
-      query,
-    )
-      .search([''])
-      .filter()
-      .paginate()
-      .sort()
-      .fields();
-
-    const data = await paymentsModel.modelQuery;
-    const meta = await paymentsModel.countTotal();
-
-    return {
-      data,
-      meta,
-    };
-  }
-};
-
-const getPaymentsById = async (id: string) => {
-  try {
-    const cacheKey = 'payments:' + id;
-
-    // 1. Check cache
-    const cachedData = await pubClient.get(cacheKey);
-    if (cachedData) {
-      return JSON.parse(cachedData);
-    }
-
-    // 2. Fetch from DB
-    const result = await Payments.findById(id);
-    if (!result || result?.isDeleted) {
-      throw new Error('Payments not found!');
-    }
-
-    // 3. Store in cache (e.g., 30s TTL)
-    await pubClient.set(cacheKey, JSON.stringify(result), { EX: 30 });
-
-    return result;
-  } catch (err) {
-    console.error('Redis caching error (gePaymentsById):', err);
-    const result = await Payments.findById(id);
-    if (!result || result?.isDeleted) {
-      throw new Error('Payments not found!');
-    }
-    return result;
-  }
-};
-
-const updatePayments = async (id: string, payload: Partial<IPayments>) => {
-  const result = await Payments.findByIdAndUpdate(id, payload, { new: true });
-  if (!result) {
-    throw new Error('Failed to update Payments');
-  }
-
-  // 🔹 Redis cache invalidation
-  try {
-    // single payments cache delete
-    await pubClient.del('payments:' + id);
-
-    // payments list cache clear
-    const keys = await pubClient.keys('payments:*');
-    if (keys.length > 0) {
-      await pubClient.del(keys);
-    }
-  } catch (err) {
-    console.error('Redis cache invalidation error (updatePayments):', err);
-  }
-
-  return result;
-};
-
-const deletePayments = async (id: string) => {
-  const result = await Payments.findByIdAndUpdate(
-    id,
-    { isDeleted: true },
-    { new: true },
-  );
-  if (!result) {
-    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to delete payments');
-  }
-
-  // 🔹 Redis cache invalidation
-  try {
-    // single payments cache delete
-    await pubClient.del('payments' + id?.toString());
-
-    // payments list cache clear
-    const keys = await pubClient.keys('payments:*');
-    if (keys.length > 0) {
-      await pubClient.del(keys);
-    }
-  } catch (err) {
-    console.error('Redis cache invalidation error (deletePayments):', err);
-  }
-
-  return result;
-};
-
 export const paymentsService = {
   checkout,
   confirmPayment,
-  createPayments,
-  getAllPayments,
-  getPaymentsById,
-  updatePayments,
-  deletePayments,
 };

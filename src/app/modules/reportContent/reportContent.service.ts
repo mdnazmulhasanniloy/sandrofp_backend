@@ -162,11 +162,7 @@ const getReportContentById = async (id: string) => {
 };
 
 const deleteReportContent = async (id: string) => {
-  const result = await ReportContent.findByIdAndUpdate(
-    id,
-    { isDeleted: true },
-    { new: true },
-  );
+  const result = await ReportContent.findByIdAndDelete(id);
   if (!result) {
     throw new AppError(
       httpStatus.BAD_REQUEST,

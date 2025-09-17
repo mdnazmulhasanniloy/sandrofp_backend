@@ -1,4 +1,4 @@
-import { model, Schema } from 'mongoose';
+import { model, Schema, Types } from 'mongoose';
 import { IProducts, IProductsModules } from './products.interface';
 
 const imageSchema = new Schema({
@@ -14,7 +14,7 @@ const productsSchema = new Schema<IProducts>(
   {
     images: [imageSchema],
     author: {
-      type: String,
+      type: Types.ObjectId,
       ref: 'User',
       required: [true, 'Product author is required'],
     },
@@ -54,7 +54,7 @@ productsSchema.index({ location: '2dsphere' });
 
 productsSchema.index({
   name: 'text',
-  author: 'text',
+  author: 1,
   category: 1,
   isVerified: 1,
   price: 1,

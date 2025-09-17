@@ -19,10 +19,10 @@ router.post(
   validateRequest(productValidation.createProductSchema),
   productsController.createProducts,
 );
+
 router.patch(
   '/approved/:id',
-  auth(USER_ROLE.admin),
-  validateRequest(productValidation.approvedProductSchema),
+  auth(USER_ROLE.admin), 
   productsController.approvedProducts,
 );
 

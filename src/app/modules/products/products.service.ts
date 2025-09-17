@@ -5,6 +5,10 @@ import QueryBuilder from '../../class/builder/QueryBuilder';
 import AppError from '../../error/AppError';
 import { UploadedFiles } from '../../interface/common.interface';
 import { uploadManyToS3 } from '../../utils/s3';
+import path from 'path';
+import fs from 'fs';
+import { sendEmail } from '../../utils/mailSender';
+import { IUser } from '../user/user.interface';
 
 const createProducts = async (payload: IProducts, files: any) => {
   if (files) {
@@ -32,9 +36,12 @@ const createProducts = async (payload: IProducts, files: any) => {
   return result;
 };
 
+ 
 const getAllProducts = async (query: Record<string, any>) => {
   const productsModel = new QueryBuilder(
-    Products.find({ isDeleted: false }),
+    Products.find({ isDeleted: false }).populate([
+      { path: 'author', select: 'name email profile' },
+    ]),
     query,
   )
     .search(['name'])
@@ -42,6 +49,8 @@ const getAllProducts = async (query: Record<string, any>) => {
     .paginate()
     .sort()
     .fields();
+
+  await productsModel.executePopulate();
 
   const data = await productsModel.modelQuery;
   const meta = await productsModel.countTotal();
@@ -53,9 +62,11 @@ const getAllProducts = async (query: Record<string, any>) => {
 };
 
 const getProductsById = async (id: string) => {
-  const result = await Products.findById(id);
+  const result = await Products.findById(id).populate([
+    { path: 'author', select: 'name email profile' },
+  ]);
   if (!result || result?.isDeleted) {
-    throw new Error('Products not found!');
+    throw new AppError(httpStatus.NOT_FOUND, 'Products not found!');
   }
   return result;
 };
@@ -89,8 +100,35 @@ const updateProducts = async (
 
   const result = await Products.findByIdAndUpdate(id, payload, { new: true });
   if (!result) {
-    throw new Error('Failed to update Products');
+    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to update Products');
   }
+  return result;
+};
+
+const rejectProducts = async (id: string, payload: { reason: string }) => {
+  const result = await Products.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true },
+  ).populate([{ path: 'author', select: 'name email profile' }]);
+  if (!result) {
+    throw new AppError(httpStatus.BAD_REQUEST, 'Failed to delete products');
+  }
+  const rejectProductMailPath = path.join(
+    __dirname,
+    '../../../../public/view/reject_product.html',
+  );
+
+  await sendEmail(
+    (result?.author as IUser).email,
+    'Your Product request Rejected',
+    fs
+      .readFileSync(rejectProductMailPath, 'utf8')
+      .replace('{{name}}', (result?.author as IUser).name)
+      .replace('{{product_name}}', result?.name)
+      .replace('{{reason}}', payload.reason as string),
+  );
+
   return result;
 };
 
@@ -112,4 +150,5 @@ export const productsService = {
   getProductsById,
   updateProducts,
   deleteProducts,
+  rejectProducts,
 };

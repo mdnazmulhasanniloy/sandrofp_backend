@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Product Approval Rejection</title>
+  </head>
+  <body
+    style="
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #f4f7fc;
+      padding: 20px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100%;
+      margin: 0;
+    "
+  >
+    <div
+      style="
+        background: #fff;
+        border-radius: 10px;
+        padding: 30px;
+        max-width: 600px;
+        width: 100%;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        margin: 0 auto;
+      "
+    >
+      <div
+        style="
+          background: #367f55;
+          padding: 20px;
+          border-radius: 10px;
+          color: #fff;
+        "
+      >
+        <h1 style="font-size: 28px; margin: 0">Product Approval Rejected</h1>
+      </div>
+      <div style="margin-top: 30px; text-align: left; color: #444">
+        <h2 style="color: #2a8a4b; margin-bottom: 10px">Dear {{name}},</h2>
+        <p style="font-size: 16px; line-height: 1.5; margin: 10px 0">
+          We regret to inform you that your product titled
+          "<strong>{{product_name}}</strong>" has been rejected for approval.
+          After a detailed review, it did not meet the required standards for
+          approval.
+        </p>
+        <div
+          style="
+            background: #f9f9f9;
+            padding: 15px;
+            border-left: 5px solid #c83636;
+            margin-top: 20px;
+            border-radius: 5px;
+          "
+        >
+          <h3 style="font-size: 18px; color: #c83636; margin-bottom: 10px">
+            Reason for Rejection:
+          </h3>
+          <p>{{reason}}</p>
+        </div>
+        <p style="font-size: 16px; line-height: 1.5; margin: 10px 0">
+          We encourage you to review the feedback provided and make necessary
+          improvements to the product. Once the required changes are made, you
+          can submit it for re-approval.
+        </p>
+        <a
+          href="mailto:support@example.com"
+          style="
+            background: #367f55;
+            color: #fff;
+            padding: 12px 20px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: bold;
+            margin-top: 20px;
+            display: inline-block;
+          "
+          >Contact Support</a
+        >
+      </div>
+      <div style="margin-top: 30px; font-size: 14px; color: #666">
+        <p style="margin-bottom: 10px">
+          If you have any further questions or need assistance, please feel free
+          to reach out to us.
+        </p>
+        <p>Best regards,</p>
+        <p><strong>Sandrof</strong></p>
+      </div>
+    </div>
+  </body>
+</html>

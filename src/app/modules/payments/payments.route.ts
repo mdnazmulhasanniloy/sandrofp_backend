@@ -1,15 +1,17 @@
-
 import { Router } from 'express';
 import { paymentsController } from './payments.controller';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from '../user/user.constants';
+import validateRequest from '../../middleware/validateRequest';
+import checkoutValidation from './payments.validation';
 
 const router = Router();
 
-router.post('/', auth(USER_ROLE.user), paymentsController.createPayments);
-router.patch('/:id', paymentsController.updatePayments);
-router.delete('/:id', paymentsController.deletePayments);
-router.get('/:id', paymentsController.getPaymentsById);
-router.get('/', paymentsController.getAllPayments);
-
+router.post(
+  '/checkout',
+  auth(USER_ROLE.user),
+  validateRequest(checkoutValidation.checkoutSchema),
+  paymentsController.checkout,
+);
+router.get('/confirm-payment', paymentsController.confirmPayment);
 export const paymentsRoutes = router;
