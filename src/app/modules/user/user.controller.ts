@@ -6,7 +6,7 @@ import httpStatus from 'http-status';
 import { uploadToS3 } from '../../utils/s3';
 import { otpServices } from '../otp/otp.service';
 import { User } from './user.models';
-import { UploadedFiles } from '../../interface/common.interface'; 
+import { UploadedFiles } from '../../interface/common.interface';
 
 const createUser = catchAsync(async (req: Request, res: Response) => {
   if (req.files) {
@@ -86,7 +86,6 @@ const updateMyProfile = catchAsync(async (req: Request, res: Response) => {
       fileName: `images/user/profile/${Math.floor(100000 + Math.random() * 900000)}`,
     });
   }
- 
 
   const result = await userService.updateUser(req?.user?.userId, req.body);
   sendResponse(res, {

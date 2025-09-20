@@ -1,4 +1,3 @@
-
 import { model, Schema } from 'mongoose';
 import { IDashboard, IDashboardModules } from './dashboard.interface';
 
@@ -8,12 +7,11 @@ const dashboardSchema = new Schema<IDashboard>(
   },
   {
     timestamps: true,
-  }
+  },
 );
- 
 
 const Dashboard = model<IDashboard, IDashboardModules>(
   'Dashboard',
-  dashboardSchema
+  dashboardSchema,
 );
 export default Dashboard;

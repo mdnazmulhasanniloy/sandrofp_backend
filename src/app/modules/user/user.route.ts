@@ -4,7 +4,7 @@ import validateRequest from '../../middleware/validateRequest';
 import { userValidation } from './user.validation';
 import auth from '../../middleware/auth';
 import { USER_ROLE } from './user.constants';
-import parseData from '../../middleware/parseData'; 
+import parseData from '../../middleware/parseData';
 import multer, { memoryStorage } from 'multer';
 
 const router = Router();
@@ -68,6 +68,10 @@ router.get(
 
 router.get('/:id', userController.getUserById);
 
-router.get('/', auth(USER_ROLE.admin), userController.getAllUser);
+router.get(
+  '/',
+  // auth(USER_ROLE.admin),
+  userController.getAllUser,
+);
 
 export const userRoutes = router;

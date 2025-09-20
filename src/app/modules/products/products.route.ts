@@ -22,7 +22,7 @@ router.post(
 
 router.patch(
   '/approved/:id',
-  auth(USER_ROLE.admin), 
+  auth(USER_ROLE.admin),
   productsController.approvedProducts,
 );
 

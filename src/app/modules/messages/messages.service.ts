@@ -3,7 +3,7 @@ import AppError from '../../error/AppError';
 import Message from './messages.models';
 import { deleteFromS3 } from '../../utils/s3';
 import { IMessages } from './messages.interface';
-import Chat from '../chat/chat.models'; 
+import Chat from '../chat/chat.models';
 import QueryBuilder from '../../class/builder/QueryBuilder';
 
 const createMessages = async (payload: IMessages) => {

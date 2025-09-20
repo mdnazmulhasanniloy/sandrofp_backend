@@ -29,7 +29,6 @@ const googleLogin = z.object({
   role: z.enum([...Role] as [string, ...string[]]).default(USER_ROLE.user),
 });
 
-
 export const authValidation = {
   refreshTokenValidationSchema,
   loginZodValidationSchema,

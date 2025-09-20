@@ -86,6 +86,14 @@ const confirmPayment = async (query: Record<string, any>, res: Response) => {
     });
   }
 
+  const payment = await Payments.findById(paymentId);
+  if (payment?.status === PAYMENT_STATUS.paid) {
+    throw res.render('paymentError', {
+      message: 'This payment is already confirmed.',
+      device: device || '',
+    });
+  }
+
   try {
     session.startTransaction();
 
@@ -140,16 +148,15 @@ const confirmPayment = async (query: Record<string, any>, res: Response) => {
         model_type: modeType.Payments,
       });
     }
-
-    if (payment?.user) {
-      await notificationServices.insertNotificationIntoDb({
-        receiver: payment?.user,
-        message: 'Banana Token Purchase Successful',
-        description: `You have successfully purchased ${payment?.totalToken} Banana Token. Transaction ID: ${payment?.tnxId}`,
-        refference: payment?._id,
-        model_type: modeType.Payments,
-      });
-    }
+    // if (payment?.user) {
+    await notificationServices.insertNotificationIntoDb({
+      receiver: payment?.user,
+      message: 'Banana Token Purchase Successful',
+      description: `You have successfully purchased ${payment?.totalToken} Banana Token. Transaction ID: ${payment?.tnxId}`,
+      refference: payment?._id,
+      model_type: modeType.Payments,
+    });
+    // }
 
     await session.commitTransaction();
     return { ...payment.toObject(), chargeDetails };

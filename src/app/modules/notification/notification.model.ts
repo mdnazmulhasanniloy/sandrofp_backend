@@ -38,8 +38,6 @@ const NotificationSchema = new Schema<TNotification>(
   { timestamps: true },
 );
 
- 
-
 export const Notification = model<TNotification>(
   'Notification',
   NotificationSchema,

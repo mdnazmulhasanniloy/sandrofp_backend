@@ -54,6 +54,8 @@ const markAsDone = async (id: string) => {
   return result;
 };
 
+const deleteNAllNotifications = async (id: string) => {};
+
 export const notificationServices = {
   insertNotificationIntoDb,
   getAllNotifications,

@@ -4,6 +4,7 @@ import { paymentsService } from './payments.service';
 import sendResponse from '../../utils/sendResponse';
 
 const checkout = catchAsync(async (req: Request, res: Response) => {
+  req.body['user'] = req.user.userId;
   const result = await paymentsService.checkout(req.body);
   sendResponse(res, {
     statusCode: 201,

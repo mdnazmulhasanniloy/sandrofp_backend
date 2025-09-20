@@ -197,7 +197,7 @@ const createSubAdmin = async (payload: IUser, file: any) => {
       .replace('{{email}}', user?.email)
       .replace('{{tempPassword}}', tempPassword)
       .replace('{{loginUrl}}', '#')
-      .replace('{{helpUrl}}', '#') 
+      .replace('{{helpUrl}}', '#'),
   );
 };
 const deleteUser = async (id: string) => {

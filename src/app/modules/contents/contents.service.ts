@@ -36,22 +36,13 @@ const createContents = async (payload: IContents, files: any) => {
 // Get all contents
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getAllContents = async (query: Record<string, any>) => {
-  const ContentModel = new QueryBuilder(
-    Contents.find().populate(['createdBy']),
-    query,
-  )
-    .search(['createdBy'])
-    .filter()
-    .paginate()
-    .sort()
-    .fields();
+  const result: any = await Contents.findOne({});
 
-  const data = await ContentModel.modelQuery;
-  const meta = await ContentModel.countTotal();
-  return {
-    data,
-    meta,
-  };
+  if (query?.key) {
+    return result?.[query.key];
+  } else {
+    return result;
+  }
 };
 
 // Get content by ID

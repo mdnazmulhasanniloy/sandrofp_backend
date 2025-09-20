@@ -1,11 +1,10 @@
 import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import { categoryService } from './category.service';
-import sendResponse from '../../utils/sendResponse'; 
+import sendResponse from '../../utils/sendResponse';
 import { uploadToS3 } from '../../utils/s3';
 
 const createCategory = catchAsync(async (req: Request, res: Response) => {
-
   if (req.file) {
     req.body.banner = await uploadToS3({
       file: req.file,
@@ -42,7 +41,7 @@ const getCategoryById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-const updateCategory = catchAsync(async (req: Request, res: Response) => { 
+const updateCategory = catchAsync(async (req: Request, res: Response) => {
   if (req.file) {
     req.body.banner = await uploadToS3({
       file: req.file,

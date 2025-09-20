@@ -1,12 +1,13 @@
 import { model, Schema, Types } from 'mongoose';
 import { IPayments, IPaymentsModules } from './payments.interface';
+import { boolean } from 'zod';
 
 const paymentsSchema = new Schema<IPayments>(
   {
     user: {
       type: Types.ObjectId,
-      ref: 'Users',
-      require: true,
+      ref: 'User',
+      required: true,
     },
     tokenRate: {
       type: Number,
@@ -48,6 +49,10 @@ const paymentsSchema = new Schema<IPayments>(
     receipt_url: {
       type: String,
       default: null,
+    },
+    isSecondColl: {
+      type: Boolean,
+      default: false,
     },
     isDeleted: { type: 'boolean', default: false },
   },

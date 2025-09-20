@@ -9,6 +9,8 @@ import MessagePageHandlers from './handlers/massagePage.handlers';
 import getChatList from './handlers/chatList.handlers';
 import SeenMessageHandlers from './handlers/seenMessages.handlers';
 import sendMessage from './handlers/sendMessage.handlers';
+import callbackFn from '../utils/callbackFn';
+import generateCryptoString from '../utils/generateCryptoString';
 
 const initializeSocketIO = async (server: HttpServer) => {
   await connectRedis();
@@ -58,6 +60,111 @@ const initializeSocketIO = async (server: HttpServer) => {
     socket.on('send_message', async (payload: any, callback: any) =>
       sendMessage(io, payload, socket?.data, callback),
     );
+
+    /**
+     * **************************************************************** calling test project ****************************************************************
+     */
+    //call-user
+    socket.on('call-user', async (data, callBack) => {
+      try {
+        const { to } = data;
+        if (!to?._id)
+          return callbackFn(callBack, {
+            success: false,
+            message: 'to is undefined',
+          });
+
+        const socketId = await pubClient.hGet('userId_to_socketId', to?._id);
+
+        io.to(socketId).emit('incoming-call', {
+          from: { ...socket.data, _id: socket?.data?.userId },
+        });
+
+        return callbackFn(callBack, {
+          success: true,
+          from: { ...socket.data, _id: socket?.data?.userId },
+          message: 'call sent successfully',
+        });
+      } catch (error) {
+        return callbackFn(callBack, {
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    });
+
+    //decline-call
+    // socket.on('decline-call', async (data, callBack) => {
+    //   const { to } = data;
+    //   console.log(data?.to);
+    //   if (!to?._id) return console.log('decline-call to is undefined');
+    //   const socketId = await pubClient.hGet('userId_to_socketId', to?._id);
+    //   if (socketId) {
+    //     io.to(socketId).emit('call-ended', { from: socket.data });
+    //   }
+    // });
+
+    socket.on('decline-call', async (data, callback) => {
+      try {
+        const { to } = data;
+        console.log(data?.to);
+
+        if (!to?._id) {
+          console.log('decline-call to is undefined');
+          return callbackFn(callback, {
+            success: false,
+            message: 'Recipient not found',
+          });
+        }
+
+        const socketId = await pubClient.hGet('userId_to_socketId', to._id);
+
+        if (socketId) {
+          io.to(socketId).emit('call-ended', { from: socket.data });
+        }
+        return callbackFn(callback, {
+          success: true,
+          message: 'Call declined successfully',
+        });
+      } catch (err) {
+        console.error('Error in decline-call:', err);
+        callbackFn(callback, {
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    });
+
+    socket.on('accept-call', async (data, callBack) => {
+      try {
+        const { to } = data;
+        console.log(data?.to);
+        if (!to?._id)
+          return callbackFn(callBack, {
+            success: false,
+            message: 'recover id not found',
+          });
+        const roomId = Math.floor(10000 + Math.random() * 90000);
+        const socketId = await pubClient.hGet('userId_to_socketId', to?._id);
+        console.log('🚀 ~ initializeSocketIO ~ socketId:', socketId);
+
+        io.to(socketId).emit('accepted-call', {
+          from: { ...socket.data, _id: socket?.data?.userId },
+          roomId,
+        });
+
+        return callbackFn(callBack, {
+          success: true,
+          data: { roomId, from: { ...socket.data, _id: socket?.data?.userId } },
+          message: 'call accepted successfully',
+        });
+      } catch (error) {
+        callbackFn(callBack, {
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    });
 
     socket.on('disconnect', async () => {
       console.log(`Client disconnected: ${socket.id}`);

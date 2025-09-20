@@ -3,7 +3,7 @@ import { Model, ObjectId } from 'mongoose';
 export interface IContents {
   deleteKey?: string[];
   _id?: string;
-  perTokenPrice:number;
+  perTokenPrice: number;
   createdBy: ObjectId;
   aboutUs?: string;
   termsAndConditions?: string;

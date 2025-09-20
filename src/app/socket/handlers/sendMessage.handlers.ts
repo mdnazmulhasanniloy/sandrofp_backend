@@ -3,6 +3,7 @@ import { pubClient } from '../../redis';
 import callbackFn from '../../utils/callbackFn';
 import Chat from '../../modules/chat/chat.models';
 import getChatList from './chatList.handlers';
+
 interface IPayload {
   imageUrl: string[];
   text: string;
@@ -44,7 +45,11 @@ const sendMessage = async (
       pubClient.hGet('userId_to_socketId', message.receiver?.toString()),
     ])) as string[];
     io.to(senderSocketId).emit('new_message', { message });
-    io.to(receiverSocketId).emit('new_message', { message });
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit('new_message', { message });
+    } else {
+      // const reciver = await User.findById(message.receiver);
+    }
     getChatList(io, { _id: payload.sender }, callback);
     getChatList(io, { _id: payload.receiver }, callback);
     callbackFn<IPayload>(callback, {

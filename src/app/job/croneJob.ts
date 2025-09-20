@@ -9,7 +9,6 @@ cron.schedule('*/10 * * * * *', async () => {
   const keys = await pubClient.keys('chat:*:messages');
 
   if (keys?.length > 0) {
-    console.log('🚀 ~ keys:', keys);
     for (const key of keys) {
       const messages = await pubClient.lRange(key, 0, -1);
       if (!messages.length) continue;

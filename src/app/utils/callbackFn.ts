@@ -2,6 +2,7 @@ type CallbackArgs<T = unknown> = {
   success: boolean;
   message: string;
   data?: T;
+  [key: string]: unknown;
 };
 
 const callbackFn = <T = unknown>(

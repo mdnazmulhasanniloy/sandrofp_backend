@@ -6,6 +6,8 @@
     "build": "tsc",
     "generate": "node generateFolder.ts",
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
+    "up": "docker-compose up -d",
+    "down": "docker-compose down",
     "lint:check": "eslint --ignore-path .eslintignore --ext .js,.ts .",
     "lint:fix": "eslint . --fix",
     "start": "tsc --watch",

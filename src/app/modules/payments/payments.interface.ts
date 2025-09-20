@@ -14,7 +14,7 @@ export interface IPayments {
   cardLast4: string;
   paymentMethod: string;
   receipt_url: string;
-
+  isSecondColl: boolean;
   isDeleted: boolean;
 }
 

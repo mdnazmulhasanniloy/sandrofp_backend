@@ -70,7 +70,7 @@ class QueryBuilder<T> {
   //   return this;
   // }
 
-    // Filter
+  // Filter
   filter() {
     const queryObj = { ...this.query }; // Copy
 
@@ -83,7 +83,6 @@ class QueryBuilder<T> {
 
     return this;
   }
-  
 
   conditionalFilter() {
     const queryObj = { ...this.query }; // Copy the query object
@@ -162,8 +161,6 @@ class QueryBuilder<T> {
 
     return this; // Return 'this' for method chaining
   }
-
-
 
   sort() {
     const sort =

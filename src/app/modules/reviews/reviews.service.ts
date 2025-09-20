@@ -27,15 +27,15 @@ const createReviews = async (payload: IReviews) => {
       (Number(averageRating) * Number(totalReviews) + Number(payload.rating)) /
       (totalReviews + 1);
 
-   await User.findByIdAndUpdate(
-     result[0].seller,
-     {
-       avgRating: newAvgRating,
-       //  $addToSet: { reviews: result[0]?._id },
-       $inc: { totalReview: 1 },
-     },
-     { session },
-   );
+    await User.findByIdAndUpdate(
+      result[0].seller,
+      {
+        avgRating: newAvgRating,
+        //  $addToSet: { reviews: result[0]?._id },
+        $inc: { totalReview: 1 },
+      },
+      { session },
+    );
 
     // await Bookings.findByIdAndUpdate(
     //   payload?.booking,
@@ -114,13 +114,12 @@ const deleteReviews = async (id: string) => {
       throw new AppError(httpStatus.BAD_REQUEST, 'Failed to delete review');
     }
 
-
     // Commit the transaction if everything is successful
     await session.commitTransaction();
     session.endSession();
 
     return result;
-  } catch (error: any) { 
+  } catch (error: any) {
     await session.abortTransaction();
     session.endSession();
     throw new AppError(

@@ -37,7 +37,6 @@ const getReportContentById = catchAsync(async (req: Request, res: Response) => {
   });
 });
 
-
 const deleteReportContent = catchAsync(async (req: Request, res: Response) => {
   const result = await reportContentService.deleteReportContent(req.params.id);
   sendResponse(res, {

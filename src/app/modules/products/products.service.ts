@@ -36,7 +36,6 @@ const createProducts = async (payload: IProducts, files: any) => {
   return result;
 };
 
- 
 const getAllProducts = async (query: Record<string, any>) => {
   const productsModel = new QueryBuilder(
     Products.find({ isDeleted: false }).populate([
