@@ -1,3 +1,4 @@
+import { tryCatch } from 'bullmq';
 const { Server } = require('socket.io');
 import { Server as HttpServer } from 'http';
 import { createAdapter } from '@socket.io/redis-adapter';
@@ -26,7 +27,7 @@ const initializeSocketIO = async (server: HttpServer) => {
   io.use(socketAuthMiddleware);
   global.socketio = io;
   io.on('connection', async (socket: Socket) => {
-    console.log(`New client connected: ${socket.id}`);
+    console.log(`New client connected: ${socket.id} :: ${socket.data?.email}`);
     const userId = socket.data?.userId as string;
     if (!userId) {
       console.warn(`Socket ${socket.id} connected without userId`);
@@ -64,28 +65,42 @@ const initializeSocketIO = async (server: HttpServer) => {
     /**
      * **************************************************************** calling test project ****************************************************************
      */
-    //call-user
+    // Call User
     socket.on('call-user', async (data, callBack) => {
       try {
-        const { to } = data;
-        if (!to?._id)
+        const { to, offer } = data;
+
+        // Check if the receiver is valid
+        if (!to?._id) {
           return callbackFn(callBack, {
             success: false,
-            message: 'to is undefined',
+            message: 'user ID is undefined',
           });
+        }
 
+        // Get the socket ID of the receiver
         const socketId = await pubClient.hGet('userId_to_socketId', to?._id);
 
-        io.to(socketId).emit('incoming-call', {
-          from: { ...socket.data, _id: socket?.data?.userId },
-        });
+        // If receiver is online, emit the incoming call event
+        if (socketId) {
+          io.to(socketId).emit('incoming-call', {
+            from: { ...socket.data, _id: socket?.data?.userId },
+            offer,
+          });
 
-        return callbackFn(callBack, {
-          success: true,
-          from: { ...socket.data, _id: socket?.data?.userId },
-          message: 'call sent successfully',
-        });
+          return callbackFn(callBack, {
+            success: true,
+            from: { ...socket.data, _id: socket?.data?.userId },
+            message: 'Call sent successfully',
+          });
+        } else {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is not online',
+          });
+        }
       } catch (error) {
+        console.error('Error in call-user:', error);
         return callbackFn(callBack, {
           success: false,
           message: 'Internal server error',
@@ -93,39 +108,35 @@ const initializeSocketIO = async (server: HttpServer) => {
       }
     });
 
-    //decline-call
-    // socket.on('decline-call', async (data, callBack) => {
-    //   const { to } = data;
-    //   console.log(data?.to);
-    //   if (!to?._id) return console.log('decline-call to is undefined');
-    //   const socketId = await pubClient.hGet('userId_to_socketId', to?._id);
-    //   if (socketId) {
-    //     io.to(socketId).emit('call-ended', { from: socket.data });
-    //   }
-    // });
-
+    // Decline Call
     socket.on('decline-call', async (data, callback) => {
       try {
         const { to } = data;
-        console.log(data?.to);
 
+        // Check if the receiver is valid
         if (!to?._id) {
-          console.log('decline-call to is undefined');
           return callbackFn(callback, {
             success: false,
-            message: 'Recipient not found',
+            message: 'receiver not found',
           });
         }
 
+        // Get the socket ID of the receiver
         const socketId = await pubClient.hGet('userId_to_socketId', to._id);
 
+        // If receiver is online, emit the call-ended event
         if (socketId) {
           io.to(socketId).emit('call-ended', { from: socket.data });
+          return callbackFn(callback, {
+            success: true,
+            message: 'Call declined successfully',
+          });
+        } else {
+          return callbackFn(callback, {
+            success: false,
+            message: 'receiver is not online',
+          });
         }
-        return callbackFn(callback, {
-          success: true,
-          message: 'Call declined successfully',
-        });
       } catch (err) {
         console.error('Error in decline-call:', err);
         callbackFn(callback, {
@@ -135,33 +146,195 @@ const initializeSocketIO = async (server: HttpServer) => {
       }
     });
 
+    // Accept Call
     socket.on('accept-call', async (data, callBack) => {
       try {
-        const { to } = data;
-        console.log(data?.to);
-        if (!to?._id)
+        const { to, answer } = data;
+
+        // Check if the receiver is valid
+        if (!to?._id) {
           return callbackFn(callBack, {
             success: false,
-            message: 'recover id not found',
+            message: 'receiver ID not found',
           });
-        const roomId = Math.floor(10000 + Math.random() * 90000);
-        const socketId = await pubClient.hGet('userId_to_socketId', to?._id);
-        console.log('🚀 ~ initializeSocketIO ~ socketId:', socketId);
+        }
 
-        io.to(socketId).emit('accepted-call', {
-          from: { ...socket.data, _id: socket?.data?.userId },
-          roomId,
+        // Generate a room ID
+        const roomId = Math.floor(10000 + Math.random() * 90000);
+
+        // Get the socket ID of the receiver
+        const socketId = await pubClient.hGet('userId_to_socketId', to._id);
+
+        // Emit the accepted-call event to the receiver
+        if (socketId) {
+          io.to(socketId).emit('accepted-call', {
+            from: { ...socket.data, _id: socket?.data?.userId },
+            roomId,
+            answer,
+          });
+
+          return callbackFn(callBack, {
+            success: true,
+            data: {
+              roomId,
+              from: { ...socket.data, _id: socket?.data?.userId },
+            },
+            message: 'Call accepted successfully',
+          });
+        } else {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is not online',
+          });
+        }
+      } catch (error) {
+        console.error('Error in accept-call:', error);
+        callbackFn(callBack, {
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    });
+
+    // Negotiate Call (for a "no-go" scenario)
+    socket.on('nego-call', async (data, callBack) => {
+      try {
+        const { to, offer } = data;
+
+        // Check if the receiver is valid
+        if (!to) {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is undefined',
+          });
+        }
+
+        // Get the socket ID of the receiver
+        const socketId = await pubClient.hGet('userId_to_socketId', to);
+
+        // If receiver is online, emit the 'nogo-incoming-call' event
+        if (socketId) {
+          io.to(socketId).emit('nogo-incoming-call', {
+            from: { ...socket.data, _id: socket?.data?.userId },
+            offer,
+          });
+
+          return callbackFn(callBack, {
+            success: true,
+            from: { ...socket.data, _id: socket?.data?.userId },
+            message: 'Call offer sent successfully',
+          });
+        } else {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is not online',
+          });
+        }
+      } catch (error) {
+        console.error('Error in nego-call:', error);
+        return callbackFn(callBack, {
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    });
+
+    // Accept Negotiation Call (for a "no-go" scenario)
+    socket.on('nego-accept-call', async (data, callBack) => {
+      try {
+        const { to, answer } = data;
+
+        // Check if the receiver is valid
+        if (!to) {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is undefined',
+          });
+        }
+        const userId = to?.userId || to?._id;
+        // Get the socket ID of the receiver
+        const socketId = await pubClient.hGet('userId_to_socketId', userId);
+
+        // If receiver is online, emit the 'nego-call-accepted' event
+        if (socketId) {
+          io.to(socketId).emit('nego-call-accepted', {
+            from: { ...socket.data, _id: socket?.data?.userId },
+            answer,
+          });
+
+          return callbackFn(callBack, {
+            success: true,
+            from: { ...socket.data, _id: socket?.data?.userId },
+            message: 'Negotiation accepted successfully',
+          });
+        } else {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is not online',
+          });
+        }
+      } catch (error) {
+        console.error('Error in nego-accept-call:', error);
+        return callbackFn(callBack, {
+          success: false,
+          message: 'Internal server error',
+        });
+      }
+    });
+
+    //finish call
+    socket.on('finish-call', async ({ to }, callBack) => {
+      console.log('🚀 ~ initializeSocketIO ~ to:', to);
+      try {
+        console.log(to);
+        if (!to) {
+          return callbackFn(callBack, {
+            success: false,
+            message: 'receiver is undefined',
+          });
+        }
+
+        const socketId = await pubClient.hGet('userId_to_socketId', to);
+
+        io.to(socketId).emit('end-call-finished', {
+          from: { ...socket.data, _id: socket.data.userId },
         });
 
         return callbackFn(callBack, {
           success: true,
-          data: { roomId, from: { ...socket.data, _id: socket?.data?.userId } },
-          message: 'call accepted successfully',
+          message: 'Call finished successfully',
         });
       } catch (error) {
-        callbackFn(callBack, {
+        console.error('Error in finish-call:', error);
+        return callbackFn(callBack, {
           success: false,
           message: 'Internal server error',
+        });
+      }
+    });
+
+    //mute-unmute voice
+    socket.on('update-media', async ({ to, data }, callback) => {
+      console.log('🚀 ~ initializeSocketIO ~ to:', to);
+      try {
+        if (!to)
+          callbackFn(callback, {
+            success: false,
+            message: 'to user id is missing',
+          });
+
+        const socketId = await pubClient.hGet('userId_to_socketId', to);
+        console.log('🚀 ~ initializeSocketIO ~ socketId:', socketId);
+        io.to(socketId).emit('media-status', data);
+        callbackFn(callback, {
+          success: true,
+          data: data,
+          message: 'media update success',
+        });
+      } catch (error: any) {
+        throw callbackFn(callback, {
+          success: false,
+          message: error?.message || 'server internal error',
         });
       }
     });
