@@ -28,6 +28,12 @@ const createProducts = async (payload: IProducts, files: any) => {
       payload.images = await uploadManyToS3(imgsArray);
     }
   }
+  // payload.images = [
+  //   {
+  //     url: 'https://fabrilife.com/products/61507e0222df7-square.jpg',
+  //     key: '61507e0222df7-square.jpg',
+  //   },
+  // ];
 
   const result = await Products.create(payload);
   if (!result) {

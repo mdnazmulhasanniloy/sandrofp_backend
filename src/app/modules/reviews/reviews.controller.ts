@@ -2,8 +2,6 @@ import { Request, Response } from 'express';
 import catchAsync from '../../utils/catchAsync';
 import { reviewsService } from './reviews.service';
 import sendResponse from '../../utils/sendResponse';
-import { storeFile } from '../../utils/fileHelper';
-import { uploadToS3 } from '../../utils/s3';
 
 const createReviews = catchAsync(async (req: Request, res: Response) => {
   req.body.user = req?.user?.userId;

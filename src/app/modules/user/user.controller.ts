@@ -28,6 +28,15 @@ const createUser = catchAsync(async (req: Request, res: Response) => {
     data: { user: result, otpToken: sendOtp },
   });
 });
+const createSubAdmin = catchAsync(async (req: Request, res: Response) => {
+  const result = await userService.createSubAdmin(req.body, req.file);
+  sendResponse(res, {
+    statusCode: httpStatus.OK,
+    success: true,
+    message: 'Sub admin created successfully',
+    data: result,
+  });
+});
 
 const getAllUser = catchAsync(async (req: Request, res: Response) => {
   const result = await userService.getAllUser(req.query);
@@ -125,4 +134,5 @@ export const userController = {
   updateMyProfile,
   deleteUser,
   deleteMYAccount,
+  createSubAdmin,
 };

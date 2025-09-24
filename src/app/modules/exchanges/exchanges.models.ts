@@ -6,12 +6,12 @@ const exchangesSchema = new Schema<IExchanges>(
   {
     user: {
       type: Types.ObjectId,
-      ref: 'Users',
+      ref: 'User',
       required: true,
     },
     requestTo: {
       type: Types.ObjectId,
-      ref: 'Users',
+      ref: 'User',
       required: true,
     },
 
@@ -49,6 +49,13 @@ const exchangesSchema = new Schema<IExchanges>(
       type: Number,
       required: true,
     },
+    reviewers: [
+      {
+        type: Types.ObjectId,
+        ref: 'User',
+        required: true,
+      },
+    ],
     reason: { type: String, default: null },
     isReviewed: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },

@@ -11,6 +11,7 @@ export interface IExchanges {
     | 'complete';
   products: ObjectId[];
   exchangeWith: ObjectId[];
+  reviewers: ObjectId[];
   extraToken: number;
   reason: string;
   totalToken: number;

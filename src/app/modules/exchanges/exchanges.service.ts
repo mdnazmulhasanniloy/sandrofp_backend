@@ -69,7 +69,18 @@ const getAllExchanges = async (query: Record<string, any>) => {
       return JSON.parse(cachedData);
     }
     const exchangesModel = new QueryBuilder(
-      Exchanges.find({ isDeleted: false }),
+      Exchanges.find({ isDeleted: false }).populate([
+        { path: 'exchangeWith' },
+        { path: 'products' },
+        {
+          path: 'requestTo',
+          select: 'name email phone profile _id',
+        },
+        {
+          path: 'user',
+          select: 'name email phone profile _id',
+        },
+      ]),
       query,
     )
       .search([''])
@@ -90,7 +101,18 @@ const getAllExchanges = async (query: Record<string, any>) => {
   } catch (err) {
     console.error('Redis caching error (getAllExchanges):', err);
     const exchangesModel = new QueryBuilder(
-      Exchanges.find({ isDeleted: false }),
+      Exchanges.find({ isDeleted: false }).populate([
+        { path: 'exchangeWith' },
+        { path: 'products' },
+        {
+          path: 'requestTo',
+          select: 'name email phone profile _id',
+        },
+        {
+          path: 'user',
+          select: 'name email phone profile _id',
+        },
+      ]),
       query,
     )
       .search([''])
@@ -120,7 +142,18 @@ const getExchangesById = async (id: string) => {
     }
 
     // 2. Fetch from DB
-    const result = await Exchanges.findById(id);
+    const result = await Exchanges.findById(id).populate([
+      { path: 'exchangeWith' },
+      { path: 'products' },
+      {
+        path: 'requestTo',
+        select: 'name email phone profile _id',
+      },
+      {
+        path: 'user',
+        select: 'name email phone profile _id',
+      },
+    ]);
     if (!result || result?.isDeleted) {
       throw new Error('Exchanges not found!');
     }
@@ -131,7 +164,18 @@ const getExchangesById = async (id: string) => {
     return result;
   } catch (err) {
     console.error('Redis caching error (geExchangesById):', err);
-    const result = await Exchanges.findById(id);
+    const result = await Exchanges.findById(id).populate([
+      { path: 'exchangeWith' },
+      { path: 'products' },
+      {
+        path: 'requestTo',
+        select: 'name email phone profile _id',
+      },
+      {
+        path: 'user',
+        select: 'name email phone profile _id',
+      },
+    ]);
     if (!result || result?.isDeleted) {
       throw new Error('Exchanges not found!');
     }

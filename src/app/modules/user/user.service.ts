@@ -182,7 +182,8 @@ const createSubAdmin = async (payload: IUser, file: any) => {
     expireAt: null,
     'verification.status': true,
   });
-
+  if (!user)
+    throw new AppError(httpStatus.BAD_REQUEST, 'sub admin create failed');
   const otpEmailPath = path.join(
     __dirname,
     '../../../../public/view/sub_admin_mail.html',
@@ -199,6 +200,8 @@ const createSubAdmin = async (payload: IUser, file: any) => {
       .replace('{{loginUrl}}', '#')
       .replace('{{helpUrl}}', '#'),
   );
+
+  return user;
 };
 const deleteUser = async (id: string) => {
   const user = await User.findByIdAndUpdate(
@@ -233,4 +236,5 @@ export const userService = {
   geUserById,
   updateUser,
   deleteUser,
+  createSubAdmin,
 };

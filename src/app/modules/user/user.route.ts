@@ -18,6 +18,14 @@ router.post(
   userController.createUser,
 );
 
+
+router.post(
+  '/create-sub-admin',
+  upload.single('profile'),
+  parseData(),
+  userController.createSubAdmin,
+);
+
 router.patch(
   '/update-my-profile',
   auth(

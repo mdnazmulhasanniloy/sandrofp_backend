@@ -9,6 +9,8 @@ import { categoryRoutes } from '../modules/category/category.route';
 import { productsRoutes } from '../modules/products/products.route';
 import { paymentsRoutes } from '../modules/payments/payments.route';
 import { reportContentRoutes } from '../modules/reportContent/reportContent.route';
+import { exchangesRoutes } from '../modules/exchanges/exchanges.route';
+import { reviewsRoutes } from '../modules/reviews/reviews.route';
 
 const router = Router();
 const moduleRoutes = [
@@ -51,6 +53,14 @@ const moduleRoutes = [
   {
     path: '/reports',
     route: reportContentRoutes,
+  },
+  {
+    path: '/exchanges',
+    route: exchangesRoutes,
+  },
+  {
+    path: '/reviews',
+    route: reviewsRoutes,
   },
 ];
 moduleRoutes.forEach(route => router.use(route.path, route.route));

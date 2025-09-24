@@ -1,8 +1,7 @@
 import { model, Schema, Types } from 'mongoose';
 import {
   IReviews,
-  IReviewsModules,
-  REVIEW_MODEL_TYPE,
+  IReviewsModules, 
 } from './reviews.interface';
 
 const reviewsSchema = new Schema<IReviews>(

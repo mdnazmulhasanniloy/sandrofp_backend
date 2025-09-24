@@ -1,10 +1,7 @@
 import { Model, ObjectId } from 'mongoose';
 import { IUser } from '../user/user.interface';
 
-export enum REVIEW_MODEL_TYPE {
-  apartment = 'Apartment',
-  property = 'Property',
-}
+ 
 
 export interface IReviews {
   _id?: string;
@@ -13,7 +10,7 @@ export interface IReviews {
   seller: ObjectId | IUser;
   review: string;
   rating: number;
-  booking?: ObjectId;
+  reference?: ObjectId;
 }
 
 export type IReviewsModules = Model<IReviews, Record<string, unknown>>;

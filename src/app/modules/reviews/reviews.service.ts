@@ -1,11 +1,12 @@
 import httpStatus from 'http-status';
-import { IReviews, REVIEW_MODEL_TYPE } from './reviews.interface';
+import { IReviews } from './reviews.interface';
 import Reviews from './reviews.models';
 import AppError from '../../error/AppError';
 import { getAverageRating } from './reviews.utils';
 import { ClientSession, startSession } from 'mongoose';
 import { User } from '../user/user.models';
 import QueryBuilder from '../../class/builder/QueryBuilder';
+import Exchanges from '../exchanges/exchanges.models';
 
 const createReviews = async (payload: IReviews) => {
   const session: ClientSession = await startSession();
@@ -37,11 +38,11 @@ const createReviews = async (payload: IReviews) => {
       { session },
     );
 
-    // await Bookings.findByIdAndUpdate(
-    //   payload?.booking,
-    //   { isReviewed: true },
-    //   { new: true, upsert: false, session },
-    // );
+    await Exchanges.findByIdAndUpdate(
+      payload?.reference,
+      { $addToSet: { reviewers: result[0]?.user } },
+      { new: true, upsert: false, session },
+    );
     // Commit the transaction if everything is successful
 
     await session.commitTransaction();
@@ -61,8 +62,8 @@ const createReviews = async (payload: IReviews) => {
 const getAllReviews = async (query: Record<string, any>) => {
   const reviewsModel = new QueryBuilder(
     Reviews.find().populate([
-      { path: 'reference' },
       { path: 'user', select: 'name email phoneNumber profile' },
+      { path: 'seller', select: 'name email phoneNumber profile' },
     ]),
     query,
   )
@@ -83,8 +84,8 @@ const getAllReviews = async (query: Record<string, any>) => {
 
 const getReviewsById = async (id: string) => {
   const result = await Reviews.findById(id).populate([
-    { path: 'reference' },
     { path: 'user', select: 'name email phoneNumber profile' },
+    { path: 'seller', select: 'name email phoneNumber profile' },
   ]);
   if (!result) {
     throw new AppError(httpStatus.BAD_REQUEST, 'Reviews not found!');
