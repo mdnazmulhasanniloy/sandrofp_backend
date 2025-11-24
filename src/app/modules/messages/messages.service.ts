@@ -5,6 +5,8 @@ import { deleteFromS3 } from '../../utils/s3';
 import { IMessages } from './messages.interface';
 import Chat from '../chat/chat.models';
 import QueryBuilder from '../../class/builder/QueryBuilder';
+import { IUser } from '../user/user.interface';
+import { User } from '../user/user.models';
 
 const createMessages = async (payload: IMessages) => {
   const alreadyExists = await Chat.findOne({
@@ -42,11 +44,54 @@ const getAllMessages = async (query: Record<string, any>) => {
         path: 'receiver',
         select: 'name email image role _id phoneNumber ',
       },
+      {
+        path: 'exchanges',
+      },
     ]),
     query,
   )
     .filter()
     // .paginate()
+    .sort()
+    .fields();
+
+  const data = await MessageModel.modelQuery;
+  const meta = await MessageModel.countTotal();
+  return {
+    data,
+    meta,
+  };
+};
+
+const getMessagesByReceiverId = async (
+  receiverId: string,
+  query: Record<string, any>,
+  userId: string,
+) => {
+  const MessageModel = new QueryBuilder(
+    Message.find({
+      $or: [
+        { sender: userId, receiver: receiverId },
+        { sender: receiverId, receiver: userId },
+      ],
+    }).populate([
+      {
+        path: 'sender',
+        select: 'name email image role _id phoneNumber ',
+      },
+      {
+        path: 'receiver',
+        select: 'name email image role _id phoneNumber ',
+      },
+      {
+        path: 'exchanges',
+        select: '-isDeleted',
+      },
+    ]),
+    query,
+  )
+    .filter()
+    .paginate()
     .sort()
     .fields();
 
@@ -69,7 +114,21 @@ const updateMessages = async (id: string, payload: Partial<IMessages>) => {
 
 // Get messages by chat ID
 const getMessagesByChatId = async (chatId: string) => {
-  const result = await Message.find({ chat: chatId }).sort({ createdAt: -1 });
+  const result = await Message.find({ chat: chatId })
+    .sort({ createdAt: -1 })
+    .populate([
+      {
+        path: 'sender',
+        select: 'name email image role _id phoneNumber ',
+      },
+      {
+        path: 'receiver',
+        select: 'name email image role _id phoneNumber ',
+      },
+      {
+        path: 'exchanges',
+      },
+    ]);
   return result;
 };
 
@@ -83,6 +142,9 @@ const getMessagesById = async (id: string) => {
     {
       path: 'receiver',
       select: 'name email image role _id phoneNumber ',
+    },
+    {
+      path: 'exchanges',
     },
   ]);
   if (!result) {
@@ -139,4 +201,5 @@ export const messagesService = {
   getAllMessages,
   deleteMessages,
   seenMessage,
+  getMessagesByReceiverId,
 };

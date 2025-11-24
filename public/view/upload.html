@@ -1,0 +1,181 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Upload Image & PUT to /cards/{id}</title>
+  <style>
+    body{
+      font-family:'Segoe UI',Roboto,Arial,sans-serif;
+      background:linear-gradient(135deg,#1e3c72,#2a5298);
+      min-height:100vh;
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      margin:0;
+      padding:20px;
+      color:#fff;
+    }
+    .container{
+      background:#ffffff11;
+      backdrop-filter:blur(12px);
+      border:1px solid rgba(255,255,255,0.2);
+      padding:30px;
+      border-radius:20px;
+      max-width:420px;
+      width:100%;
+      box-shadow:0 8px 25px rgba(0,0,0,0.25);
+      animation:fadeIn 0.6s ease-in-out;
+    }
+    h2{
+      text-align:center;
+      margin-bottom:20px;
+      font-size:1.5rem;
+      color:#fff;
+    }
+    label{
+      display:block;
+      margin:12px 0 6px;
+      font-weight:600;
+      font-size:0.9rem;
+    }
+    input[type=text], input[type=file]{
+      width:100%;
+      padding:12px;
+      border:1px solid rgba(255,255,255,0.3);
+      border-radius:10px;
+      background:rgba(255,255,255,0.1);
+      color:#fff;
+      outline:none;
+    }
+    input::placeholder{color:#ddd}
+    button{
+      margin-top:16px;
+      width:100%;
+      padding:12px;
+      border-radius:10px;
+      border:0;
+      background:linear-gradient(90deg,#4facfe,#00f2fe);
+      color:white;
+      font-weight:600;
+      font-size:1rem;
+      cursor:pointer;
+      transition:transform 0.2s,box-shadow 0.2s;
+    }
+    button:hover{
+      transform:translateY(-2px);
+      box-shadow:0 4px 12px rgba(0,0,0,0.2);
+    }
+    .hint{
+      font-size:12px;
+      color:#ddd;
+      margin-top:10px;
+      text-align:center;
+    }
+    .status{
+      margin-top:16px;
+      padding:12px;
+      border-radius:12px;
+      font-size:0.9rem;
+    }
+    img.preview{
+      max-width:100%;
+      margin-top:12px;
+      border-radius:12px;
+      display:block;
+      border:2px dashed rgba(255,255,255,0.4);
+    }
+    @keyframes fadeIn{
+      from{opacity:0;transform:translateY(10px)}
+      to{opacity:1;transform:translateY(0)}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Upload Image</h2>
+    <form id="uploadForm">
+      <label for="cardId">Card ID</label>
+      <input id="cardId" name="cardId" type="text" placeholder="Enter card ID" required />
+
+      <label for="imageFile">Choose Image</label>
+      <input id="imageFile" name="imageFile" type="file" accept="image/*" required />
+      <img id="preview" class="preview" alt="preview" style="display:none" />
+
+      <label for="authToken">Authorization Token (optional)</label>
+      <input id="authToken" name="authToken" type="text" placeholder="Bearer xxxxx" />
+
+      <button type="submit">Submit</button>
+      <p class="hint">This will call <code>PUT https://api.huemanexpressions.com/api/v1/cards/{id}</code></p>
+    </form>
+
+    <div id="status" class="status" hidden></div>
+  </div>
+
+  <script>
+    const form = document.getElementById('uploadForm');
+    const fileInput = document.getElementById('imageFile');
+    const preview = document.getElementById('preview');
+    const status = document.getElementById('status');
+
+    fileInput.addEventListener('change', () => {
+      const f = fileInput.files && fileInput.files[0];
+      if (!f) { preview.style.display = 'none'; return }
+      const url = URL.createObjectURL(f);
+      preview.src = url;
+      preview.style.display = 'block';
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      status.hidden = true;
+      status.textContent = '';
+
+      const id = document.getElementById('cardId').value.trim();
+      if (!id) return alert('Please enter card id');
+
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) return alert('Please select an image file');
+
+      const token = document.getElementById('authToken').value.trim();
+
+      const fd = new FormData();
+      fd.append('image', file);
+
+      const url = `https://api.huemanexpressions.com/api/v1/cards/${encodeURIComponent(id)}`;
+
+      try {
+        status.hidden = false;
+        status.textContent = 'Uploading...';
+        status.style.background = 'rgba(255,255,255,0.15)';
+
+        const headers = {};
+        if (token) headers['Authorization'] = token;
+
+        const res = await fetch(url, {
+          method: 'PUT',
+          headers,
+          body: fd
+        });
+
+        const contentType = res.headers.get('content-type') || '';
+        let data;
+        if (contentType.includes('application/json')) data = await res.json();
+        else data = await res.text();
+
+        if (!res.ok) {
+          status.innerHTML = `<strong>Error ${res.status}:</strong> ${JSON.stringify(data)}`;
+          status.style.background = '#e63946aa';
+        } else {
+          status.innerHTML = `<strong>Success ${res.status}:</strong> ${JSON.stringify(data)}`;
+          status.style.background = '#2a9d8faa';
+        }
+      } catch (err) {
+        status.hidden = false;
+        status.innerHTML = `<strong>Network error:</strong> ${err.message}`;
+        status.style.background = '#e63946aa';
+      }
+    });
+  </script>
+</body>
+</html>

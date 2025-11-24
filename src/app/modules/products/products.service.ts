@@ -28,12 +28,6 @@ const createProducts = async (payload: IProducts, files: any) => {
       payload.images = await uploadManyToS3(imgsArray);
     }
   }
-  // payload.images = [
-  //   {
-  //     url: 'https://fabrilife.com/products/61507e0222df7-square.jpg',
-  //     key: '61507e0222df7-square.jpg',
-  //   },
-  // ];
 
   const result = await Products.create(payload);
   if (!result) {
@@ -43,12 +37,15 @@ const createProducts = async (payload: IProducts, files: any) => {
 };
 
 const getAllProducts = async (query: Record<string, any>) => {
+  const { latitude, longitude, distance, ...queries } = query;
   const productsModel = new QueryBuilder(
     Products.find({ isDeleted: false }).populate([
       { path: 'author', select: 'name email profile' },
+      { path: 'category' },
     ]),
-    query,
+    queries,
   )
+    .nearbyFilter('location', latitude, longitude, distance)
     .search(['name'])
     .filter()
     .paginate()
@@ -69,6 +66,7 @@ const getAllProducts = async (query: Record<string, any>) => {
 const getProductsById = async (id: string) => {
   const result = await Products.findById(id).populate([
     { path: 'author', select: 'name email profile' },
+    { path: 'category' },
   ]);
   if (!result || result?.isDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, 'Products not found!');

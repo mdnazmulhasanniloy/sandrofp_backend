@@ -23,6 +23,31 @@ class QueryBuilder<T> {
     }
   }
 
+  nearbyFilter(locationField: string, lat: string, long: string, des: string) {
+    const latitude = Number(lat);
+    const longitude = Number(long);
+    const distance = Number(des) || 10; // default: 10 km
+
+    if (!isNaN(latitude) && !isNaN(longitude) && !isNaN(distance)) {
+      // Convert km to meters
+      const distanceInMeters = distance * 1000;
+
+      this.modelQuery = this.modelQuery.find({
+        [locationField]: {
+          $near: {
+            $geometry: {
+              type: 'Point',
+              coordinates: [longitude, latitude],
+            },
+            $maxDistance: distanceInMeters,
+          },
+        },
+      });
+    }
+
+    return this;
+  }
+
   search(searchableFields: string[]) {
     const searchTerm = this?.query?.searchTerm;
     if (searchTerm) {
@@ -205,6 +230,7 @@ class QueryBuilder<T> {
     }
     return this;
   }
+
   populateFields(fields: string) {
     this.populatedFields = fields;
     return this;

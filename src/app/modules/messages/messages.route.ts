@@ -39,6 +39,16 @@ router.patch(
 );
 
 router.get('/my-messages/:chatId', messagesController.getMessagesByChatId);
+router.get(
+  '/get-by-recovered/:receiverId',
+  auth(
+    USER_ROLE.user,
+    USER_ROLE.admin,
+    USER_ROLE.sub_admin,
+    USER_ROLE.super_admin,
+  ),
+  messagesController.getMessagesByReceiverId,
+);
 
 router.delete(
   '/:id',

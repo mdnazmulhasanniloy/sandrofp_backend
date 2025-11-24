@@ -39,7 +39,11 @@ const productsSchema = new Schema<IProducts>(
     isSoldOut: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
-    category: { type: Schema.Types.ObjectId, ref: 'Category', required: true },
+    category: {
+      type: Schema.Types.ObjectId,
+      ref: 'Categories',
+      required: true,
+    },
     price: { type: Number, required: [true, 'Price is required'], min: 0 },
     quantity: { type: String, required: [true, 'Quantity is required'] },
     discount: { type: Number, default: 0 },
