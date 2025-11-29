@@ -18,15 +18,27 @@ const sendMessage = async (
   user: any,
   callback: (args: any) => void,
 ) => {
+  console.log({
+    payload,
+    user,
+  });
   try {
-    if (!payload?.chat) {
-      const chat = await Chat.create({
-        participants: [payload?.receiver, payload?.sender],
+    const chat = await Chat.findOne({
+      participants: { $all: [user.userId, payload.receiver] },
+    });
+    if (!chat) {
+      const newChat = await Chat.create({
+        participants: [payload?.receiver, user.userId],
         status: 'accepted',
       });
+      payload.chat = newChat._id?.toString();
+    } else {
       payload.chat = chat._id?.toString();
     }
-
+    console.log({
+      payload,
+      user,
+    });
     const message = {
       chat: payload?.chat,
       exchanges: payload?.exchanges,

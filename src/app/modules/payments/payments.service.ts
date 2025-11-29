@@ -17,6 +17,7 @@ import { PAYMENT_STATUS } from './payments.constants';
 import { USER_ROLE } from '../user/user.constants';
 import { notificationServices } from '../notification/notification.service';
 import { modeType } from '../notification/notification.interface';
+import { IUser } from '../user/user.interface';
 
 const checkout = async (payload: any) => {
   const content: IContents | null = await Contents.findOne({}).select(
@@ -157,7 +158,13 @@ const confirmPayment = async (query: Record<string, any>, res: Response) => {
       model_type: modeType.Payments,
     });
     // }
-
+    await User.findByIdAndUpdate(
+      (payment?.user as IUser)?._id,
+      {
+        $inc: { tokens: payment.totalToken },
+      },
+      { new: true, session },
+    );
     await session.commitTransaction();
     return { ...payment.toObject(), chargeDetails };
   } catch (error: any) {

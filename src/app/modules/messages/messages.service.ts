@@ -127,6 +127,14 @@ const getMessagesByChatId = async (chatId: string) => {
       },
       {
         path: 'exchanges',
+        populate: [
+          {
+            path: 'exchangeWith',
+          },
+          {
+            path: 'products',
+          },
+        ],
       },
     ]);
   return result;
