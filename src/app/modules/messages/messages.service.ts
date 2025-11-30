@@ -35,7 +35,7 @@ const createMessages = async (payload: IMessages) => {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const getAllMessages = async (query: Record<string, any>) => {
   const MessageModel = new QueryBuilder(
-    Message.find().populate([
+    Message.find() .populate([
       {
         path: 'sender',
         select: 'name email image role _id phoneNumber ',
@@ -46,6 +46,14 @@ const getAllMessages = async (query: Record<string, any>) => {
       },
       {
         path: 'exchanges',
+        populate: [
+          {
+            path: 'exchangeWith',
+          },
+          {
+            path: 'products',
+          },
+        ],
       },
     ]),
     query,
@@ -74,7 +82,7 @@ const getMessagesByReceiverId = async (
         { sender: userId, receiver: receiverId },
         { sender: receiverId, receiver: userId },
       ],
-    }).populate([
+    }) .populate([
       {
         path: 'sender',
         select: 'name email image role _id phoneNumber ',
@@ -85,7 +93,14 @@ const getMessagesByReceiverId = async (
       },
       {
         path: 'exchanges',
-        select: '-isDeleted',
+        populate: [
+          {
+            path: 'exchangeWith',
+          },
+          {
+            path: 'products',
+          },
+        ],
       },
     ]),
     query,
@@ -153,6 +168,14 @@ const getMessagesById = async (id: string) => {
     },
     {
       path: 'exchanges',
+      populate: [
+        {
+          path: 'exchangeWith',
+        },
+        {
+          path: 'products',
+        },
+      ],
     },
   ]);
   if (!result) {
