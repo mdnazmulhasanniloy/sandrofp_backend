@@ -6,7 +6,7 @@ import AppError from '../../error/AppError';
 import { UploadedFiles } from '../../interface/common.interface';
 import { uploadManyToS3 } from '../../utils/s3';
 import path from 'path';
-import fs from 'fs';
+import fs from 'fs'; 
 import { sendEmail } from '../../utils/mailSender';
 import { IUser } from '../user/user.interface';
 
@@ -40,7 +40,7 @@ const getAllProducts = async (query: Record<string, any>) => {
   const { latitude, longitude, distance, ...queries } = query;
   const productsModel = new QueryBuilder(
     Products.find({ isDeleted: false }).populate([
-      { path: 'author', select: 'name email profile' },
+      { path: 'author', select: 'name email profile avgRating' },
       { path: 'category' },
     ]),
     queries,
@@ -65,7 +65,7 @@ const getAllProducts = async (query: Record<string, any>) => {
 
 const getProductsById = async (id: string) => {
   const result = await Products.findById(id).populate([
-    { path: 'author', select: 'name email profile' },
+    { path: 'author', select: 'name email profile avgRating' },
     { path: 'category' },
   ]);
   if (!result || result?.isDeleted) {
