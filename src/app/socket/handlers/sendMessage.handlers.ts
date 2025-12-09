@@ -62,8 +62,8 @@ const sendMessage = async (
     } else {
       // const reciver = await User.findById(message.receiver);
     }
-    getChatList(io, { _id: payload.sender }, callback);
-    getChatList(io, { _id: payload.receiver }, callback);
+    getChatList(io, { userId: payload.sender }, callback);
+    getChatList(io, { userId: payload.receiver }, callback);
     callbackFn<IPayload>(callback, {
       success: true,
       message: 'message send successfully',
