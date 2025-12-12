@@ -23,6 +23,9 @@ const getChatList = async (
       });
     }
 
+    if (user?.message) {
+      chatList[0]['message'] = user.message;
+    } 
     const userSocketId = (await pubClient.hGet(
       'userId_to_socketId',
       user?.userId?.toString(),

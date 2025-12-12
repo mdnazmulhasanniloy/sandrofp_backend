@@ -18,10 +18,7 @@ const sendMessage = async (
   user: any,
   callback: (args: any) => void,
 ) => {
-  console.log({
-    payload,
-    user,
-  });
+  
   try {
     const chat = await Chat.findOne({
       participants: { $all: [user.userId, payload.receiver] },
@@ -35,10 +32,7 @@ const sendMessage = async (
     } else {
       payload.chat = chat._id?.toString();
     }
-    console.log({
-      payload,
-      user,
-    });
+   
     const message = {
       chat: payload?.chat,
       exchanges: payload?.exchanges,
@@ -59,11 +53,16 @@ const sendMessage = async (
     io.to(senderSocketId).emit('new_message', { message });
     if (receiverSocketId) {
       io.to(receiverSocketId).emit('new_message', { message });
-    } else {
-      // const reciver = await User.findById(message.receiver);
     }
-    getChatList(io, { userId: payload.sender }, callback);
-    getChatList(io, { userId: payload.receiver }, callback);
+    //  else {
+    //   // const reciver = await User.findById(message.receiver);
+    // }
+
+    await pubClient.del('chat_list:' + user?.userId?.toString());
+    await pubClient.del('chat_list:' + payload?.receiver?.toString());
+
+    getChatList(io, { userId: user.userId, message: message }, callback);
+    getChatList(io, { userId: payload.receiver, message: message }, callback);
     callbackFn<IPayload>(callback, {
       success: true,
       message: 'message send successfully',
