@@ -252,43 +252,7 @@ const getAllTransitions = async (query: Record<string, any>) => {
     data,
   };
 
-  // const earnings = await Payments.aggregate([
-  //   {
-  //     $match: {
-  //       status: PAYMENT_STATUS.paid,
-  //     },
-  //   },
-  //   {
-  //     $facet: {
-  //       totalEarnings: [
-  //         {
-  //           $group: {
-  //             _id: null,
-  //             total: { $sum: '$amount' },
-  //           },
-  //         },
-  //       ],
-  //       todayEarnings: [
-  //         {
-  //           $match: {
-  //             isDeleted: false,
-  //             createdAt: {
-  //               $gte: today.toDate(),
-  //               $lte: today.endOf('day').toDate(),
-  //             },
-  //           },
-  //         },
-  //         {
-  //           $group: {
-  //             _id: null,
-  //             total: { $sum: '$amount' }, // Sum of today's earnings
-  //           },
-  //         },
-  //       ],
-  //     },
-  //   },
-  // ]);
-
+ 
   const earnings = await Payments.aggregate([
     {
       $match: {
@@ -301,7 +265,7 @@ const getAllTransitions = async (query: Record<string, any>) => {
           {
             $group: {
               _id: null,
-              total: { $sum: '$amount' },
+              total: { $sum: '$price' },
             },
           },
           {
@@ -323,7 +287,7 @@ const getAllTransitions = async (query: Record<string, any>) => {
           {
             $group: {
               _id: null,
-              total: { $sum: '$amount' },
+              total: { $sum: '$price' },
             },
           },
           {
