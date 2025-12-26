@@ -39,6 +39,18 @@ const productsSchema = new Schema<IProducts>(
     isSoldOut: { type: Boolean, default: false },
     isFeatured: { type: Boolean, default: false },
     isVerified: { type: Boolean, default: false },
+    notInterested: [
+      {
+        type: Types.ObjectId,
+        ref: 'User',
+      },
+    ],
+    interested: [
+      {
+        type: Types.ObjectId,
+        ref: 'User',
+      },
+    ],
     category: {
       type: Schema.Types.ObjectId,
       ref: 'Categories',

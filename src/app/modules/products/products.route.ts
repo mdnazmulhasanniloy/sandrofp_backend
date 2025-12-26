@@ -32,6 +32,16 @@ router.patch(
   validateRequest(productValidation.rejectProductSchema),
   productsController.rejectProducts,
 );
+router.patch(
+  '/interested/:id',
+  auth(USER_ROLE.user), 
+  productsController.makeInterested,
+);
+router.patch(
+  '/not-interested/:id',
+  auth(USER_ROLE.user), 
+  productsController.makeNotInterested,
+);
 
 router.patch(
   '/:id',

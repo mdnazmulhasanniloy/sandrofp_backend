@@ -23,6 +23,7 @@ const getAllProducts = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 const getMyProducts = catchAsync(async (req: Request, res: Response) => {
   req.query.author = req.user.userId;
   const result = await productsService.getAllProducts(req.query);
@@ -43,6 +44,7 @@ const getProductsById = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+
 const updateProducts = catchAsync(async (req: Request, res: Response) => {
   const result = await productsService.updateProducts(
     req.params.id,
@@ -95,6 +97,30 @@ const deleteProducts = catchAsync(async (req: Request, res: Response) => {
     data: result,
   });
 });
+const makeInterested = catchAsync(async (req: Request, res: Response) => {
+  const result = await productsService.makeInterested(
+    req.params.id,
+    req.user.userId,
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Products interested successfully',
+    data: result,
+  });
+});
+const makeNotInterested = catchAsync(async (req: Request, res: Response) => {
+  const result = await productsService.makeNotInterested(
+    req.params.id,
+    req.user.userId,
+  );
+  sendResponse(res, {
+    statusCode: 200,
+    success: true,
+    message: 'Products not interested successfully',
+    data: result,
+  });
+});
 
 export const productsController = {
   createProducts,
@@ -105,4 +131,6 @@ export const productsController = {
   getMyProducts,
   approvedProducts,
   rejectProducts,
+  makeInterested,
+  makeNotInterested,
 };

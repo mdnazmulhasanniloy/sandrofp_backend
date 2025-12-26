@@ -154,6 +154,12 @@ class QueryBuilder<T> {
             this.modelQuery = this.modelQuery.find({
               [key]: { $ne: v },
             });
+          } else if (value.includes('!!')) {
+            const [, v] = value.split('!!');
+
+            this.modelQuery = this.modelQuery.find({
+              [key]: { $nin: [v] },
+            });
           } else if (value.includes('-')) {
             // Handle range filtering (min-max)
             const [min, max] = value.split('-').map(Number);

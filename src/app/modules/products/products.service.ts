@@ -6,7 +6,7 @@ import AppError from '../../error/AppError';
 import { UploadedFiles } from '../../interface/common.interface';
 import { uploadManyToS3 } from '../../utils/s3';
 import path from 'path';
-import fs from 'fs'; 
+import fs from 'fs';
 import { sendEmail } from '../../utils/mailSender';
 import { IUser } from '../user/user.interface';
 
@@ -147,6 +147,38 @@ const deleteProducts = async (id: string) => {
   return result;
 };
 
+const makeNotInterested = async (productId: string, userId: string) => {
+  const product = await Products.findByIdAndUpdate(
+    productId,
+    {
+      $addToSet: { notInterested: userId },
+      $pull: { interested: userId },
+    },
+    { new: true },
+  );
+  if (!product) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+
+  return product;
+};
+
+const makeInterested = async (productId: string, userId: string) => {
+  const product = await Products.findByIdAndUpdate(
+    productId,
+    {
+      $addToSet: { interested: userId },
+      $pull: { notInterested: userId },
+    },
+    { new: true },
+  );
+  if (!product) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Product not found');
+  }
+
+  return product;
+};
+
 export const productsService = {
   createProducts,
   getAllProducts,
@@ -154,4 +186,6 @@ export const productsService = {
   updateProducts,
   deleteProducts,
   rejectProducts,
+  makeNotInterested,
+  makeInterested,
 };

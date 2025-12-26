@@ -24,6 +24,8 @@ export interface IProducts {
   materials: string;
   colors: string;
   tags: string[];
+  notInterested: ObjectId[] | IUser[];
+  interested: ObjectId[] | IUser[];
   isSoldOut: boolean;
   isFeatured: boolean;
   quantity: string;
